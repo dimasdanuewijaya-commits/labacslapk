@@ -331,14 +331,7 @@ class _AttendanceScreenState extends State<AttendanceScreen> {
         backgroundColor: AppTheme.surface.withValues(alpha: 0.8),
         elevation: 0,
         scrolledUnderElevation: 0,
-        leading: IconButton(
-          icon: const Icon(Icons.arrow_back, color: AppTheme.primary),
-          onPressed: () {
-            if (Navigator.of(context).canPop()) {
-              Navigator.of(context).pop();
-            }
-          },
-        ),
+        automaticallyImplyLeading: false,
         title: Text(
           'Details',
           style: GoogleFonts.hankenGrotesk(
