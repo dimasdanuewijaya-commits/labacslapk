@@ -67,8 +67,8 @@ class ProfileScreen extends StatelessWidget {
 
     return Column(
       children: [
-        // Avatar with gradient ring + pulse
-        _PulsingAvatar(),
+        // Static Avatar with gradient ring
+        _StaticAvatar(),
         const SizedBox(height: 16),
         Text(
           displayName,
@@ -273,53 +273,12 @@ class ProfileScreen extends StatelessWidget {
   }
 }
 
-class _PulsingAvatar extends StatefulWidget {
-  @override
-  State<_PulsingAvatar> createState() => _PulsingAvatarState();
-}
-
-class _PulsingAvatarState extends State<_PulsingAvatar>
-    with SingleTickerProviderStateMixin {
-  late AnimationController _controller;
-
-  @override
-  void initState() {
-    super.initState();
-    _controller = AnimationController(
-      duration: const Duration(seconds: 3),
-      vsync: this,
-    )..repeat();
-  }
-
-  @override
-  void dispose() {
-    _controller.dispose();
-    super.dispose();
-  }
-
+class _StaticAvatar extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Stack(
       alignment: Alignment.center,
       children: [
-        // Pulse ring
-        AnimatedBuilder(
-          animation: _controller,
-          builder: (context, child) {
-            final value = _controller.value;
-            return Container(
-              width: 96 + (value * 30),
-              height: 96 + (value * 30),
-              decoration: BoxDecoration(
-                shape: BoxShape.circle,
-                border: Border.all(
-                  color: AppTheme.primary.withValues(alpha: 0.2 * (1 - value)),
-                  width: 2,
-                ),
-              ),
-            );
-          },
-        ),
         // Avatar with gradient border
         Container(
           width: 96,
@@ -374,17 +333,3 @@ class _PulsingAvatarState extends State<_PulsingAvatar>
   }
 }
 
-class AnimatedBuilder extends AnimatedWidget {
-  final Widget Function(BuildContext, Widget?) builder;
-
-  const AnimatedBuilder({
-    super.key,
-    required Animation<double> animation,
-    required this.builder,
-  }) : super(listenable: animation);
-
-  @override
-  Widget build(BuildContext context) {
-    return builder(context, null);
-  }
-}

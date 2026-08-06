@@ -208,52 +208,33 @@ class _LoginScreenState extends State<LoginScreen>
   Widget _buildBranding() {
     return Column(
       children: [
-        // Logo with pulse effect
-        Stack(
-          alignment: Alignment.center,
-          children: [
-            AnimatedBuilder(
-              animation: _pulseAnimation,
-              builder: (context, _) {
-                return Transform.scale(
-                  scale: _pulseAnimation.value * 1.5,
-                  child: Container(
-                    width: 80,
-                    height: 80,
-                    decoration: BoxDecoration(
-                      shape: BoxShape.circle,
-                      color: AppTheme.primary.withValues(alpha: 0.05),
-                    ),
-                  ),
-                );
-              },
-            ),
-            Container(
-              width: 80,
-              height: 80,
-              decoration: BoxDecoration(
-                color: Colors.white,
-                borderRadius: BorderRadius.circular(16),
-                boxShadow: [
-                  BoxShadow(
-                    color: Colors.black.withValues(alpha: 0.1),
-                    blurRadius: 20,
-                    offset: const Offset(0, 10),
-                  ),
-                ],
-                border: Border.all(
-                  color: Colors.white.withValues(alpha: 0.4),
-                ),
+        // Logo
+        Container(
+          width: 100,
+          height: 100,
+          decoration: BoxDecoration(
+            color: Colors.white,
+            borderRadius: BorderRadius.circular(20),
+            boxShadow: [
+              BoxShadow(
+                color: Colors.black.withValues(alpha: 0.1),
+                blurRadius: 20,
+                offset: const Offset(0, 10),
               ),
-              child: const Center(
-                child: Icon(
-                  Icons.science_outlined,
-                  size: 40,
-                  color: AppTheme.primary,
-                ),
-              ),
+            ],
+            border: Border.all(
+              color: Colors.white.withValues(alpha: 0.4),
             ),
-          ],
+          ),
+          child: ClipRRect(
+            borderRadius: BorderRadius.circular(20),
+            child: Image.asset(
+              'assets/images/logo_acsl.jpeg',
+              width: 100,
+              height: 100,
+              fit: BoxFit.cover,
+            ),
+          ),
         ),
         const SizedBox(height: 12),
         Text(
@@ -310,7 +291,7 @@ class _LoginScreenState extends State<LoginScreen>
             // Google Sign-In button
             OutlinedButton.icon(
               onPressed: _isLoading ? null : _handleGoogleSignIn,
-              icon: const Icon(Icons.g_mobiledata, size: 24, color: AppTheme.primary),
+              icon: Image.asset('assets/images/google_logo.png', width: 24, height: 24),
               label: Text(
                 'Sign in with Google',
                 style: GoogleFonts.hankenGrotesk(

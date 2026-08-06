@@ -13,6 +13,25 @@ class ScheduleScreen extends StatefulWidget {
 class _ScheduleScreenState extends State<ScheduleScreen> {
   int _selectedDay = 14;
 
+  late DateTime _currentMonth;
+  final DateTime _minMonth = DateTime(2026, 5);
+  final DateTime _maxMonth = DateTime(2026, 10);
+
+  @override
+  void initState() {
+    super.initState();
+    final now = DateTime.now();
+    _selectedDay = now.day;
+    
+    DateTime initial = DateTime(now.year, now.month);
+    if (initial.isBefore(_minMonth)) {
+      initial = _minMonth;
+    } else if (initial.isAfter(_maxMonth)) {
+      initial = _maxMonth;
+    }
+    _currentMonth = initial;
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -65,10 +84,26 @@ class _ScheduleScreenState extends State<ScheduleScreen> {
 
   Widget _buildCalendar(BuildContext context) {
     final daysOfWeek = ['S', 'M', 'T', 'W', 'T', 'F', 'S'];
-    // October 2024 starts on Tuesday (index 2), 31 days
-    final prevMonthDays = [29, 30]; // Sep overflow
-    final monthDays = List.generate(31, (i) => i + 1);
-    final nextMonthDays = [1, 2]; // Nov overflow
+    const monthNames = ['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December'];
+    
+    final lastDayOfMonth = DateTime(_currentMonth.year, _currentMonth.month + 1, 0);
+    final daysInMonth = lastDayOfMonth.day;
+    
+    // Calculate offset for the first day of the month
+    final firstDayWeekday = _currentMonth.weekday; // 1 = Mon, 7 = Sun
+    final startOffset = firstDayWeekday == 7 ? 0 : firstDayWeekday;
+    
+    // Calculate previous month overflow
+    final lastDayOfPrevMonth = DateTime(_currentMonth.year, _currentMonth.month, 0).day;
+    final prevMonthDays = List.generate(startOffset, (i) => lastDayOfPrevMonth - startOffset + i + 1);
+    
+    // Month days
+    final monthDays = List.generate(daysInMonth, (i) => i + 1);
+    
+    // Next month overflow
+    final totalCells = startOffset + daysInMonth;
+    final nextMonthCells = totalCells % 7 == 0 ? 0 : 7 - (totalCells % 7);
+    final nextMonthDays = List.generate(nextMonthCells, (i) => i + 1);
 
     return GlassCard(
       borderLeftColor: AppTheme.primary,
@@ -80,20 +115,36 @@ class _ScheduleScreenState extends State<ScheduleScreen> {
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
               Text(
-                'October 2024',
+                '${monthNames[_currentMonth.month - 1]} ${_currentMonth.year}',
                 style: Theme.of(context).textTheme.bodyLarge,
               ),
               Row(
                 children: [
                   IconButton(
-                    icon: const Icon(Icons.chevron_left, size: 20, color: AppTheme.primary),
-                    onPressed: () {},
+                    icon: Icon(
+                      Icons.chevron_left, 
+                      size: 20, 
+                      color: _currentMonth.isAfter(_minMonth) ? AppTheme.primary : AppTheme.outline.withValues(alpha: 0.3)
+                    ),
+                    onPressed: _currentMonth.isAfter(_minMonth) ? () {
+                      setState(() {
+                        _currentMonth = DateTime(_currentMonth.year, _currentMonth.month - 1);
+                      });
+                    } : null,
                     padding: EdgeInsets.zero,
                     constraints: const BoxConstraints(minWidth: 32, minHeight: 32),
                   ),
                   IconButton(
-                    icon: const Icon(Icons.chevron_right, size: 20, color: AppTheme.primary),
-                    onPressed: () {},
+                    icon: Icon(
+                      Icons.chevron_right, 
+                      size: 20, 
+                      color: _currentMonth.isBefore(_maxMonth) ? AppTheme.primary : AppTheme.outline.withValues(alpha: 0.3)
+                    ),
+                    onPressed: _currentMonth.isBefore(_maxMonth) ? () {
+                      setState(() {
+                        _currentMonth = DateTime(_currentMonth.year, _currentMonth.month + 1);
+                      });
+                    } : null,
                     padding: EdgeInsets.zero,
                     constraints: const BoxConstraints(minWidth: 32, minHeight: 32),
                   ),
@@ -130,7 +181,7 @@ class _ScheduleScreenState extends State<ScheduleScreen> {
               // Previous month days
               ...prevMonthDays.map((d) => _buildDayCell(d, isOtherMonth: true)),
               // Current month days
-              ...monthDays.map((d) => _buildDayCell(d, isSelected: d == _selectedDay)),
+              ...monthDays.map((d) => _buildDayCell(d, isSelected: d == _selectedDay && _currentMonth.month == DateTime.now().month && _currentMonth.year == DateTime.now().year)),
               // Next month days
               ...nextMonthDays.map((d) => _buildDayCell(d, isOtherMonth: true)),
             ],
