@@ -20,7 +20,6 @@ class _LoginScreenState extends State<LoginScreen>
   bool _obscurePassword = true;
   bool _rememberMe = false;
   bool _isLoading = false;
-  bool _isSignUpMode = false;
 
   late AnimationController _pulseController;
   late Animation<double> _pulseAnimation;
@@ -69,44 +68,19 @@ class _LoginScreenState extends State<LoginScreen>
     setState(() => _isLoading = true);
 
     try {
-      if (_isSignUpMode) {
-        await _authService.registerWithEmailPassword(email, password);
-      } else {
-        await _authService.signInWithEmailPassword(email, password);
-      }
+      await _authService.signInWithEmailPassword(email, password);
       if (mounted) {
-        Navigator.of(context).pushReplacementNamed('/main');
+        if (email.toLowerCase() == 'admin@lab.com' || email.toLowerCase() == 'admin@lab.acsl.com') {
+          Navigator.of(context).pushReplacementNamed('/admin_main');
+        } else {
+          Navigator.of(context).pushReplacementNamed('/main');
+        }
       }
     } catch (e) {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
             content: Text(e.toString()),
-            backgroundColor: AppTheme.error,
-          ),
-        );
-      }
-    } finally {
-      if (mounted) {
-        setState(() => _isLoading = false);
-      }
-    }
-  }
-
-  Future<void> _handleGoogleSignIn() async {
-    if (_isLoading) return;
-    setState(() => _isLoading = true);
-
-    try {
-      final userCredential = await _authService.signInWithGoogle();
-      if (userCredential != null && mounted) {
-        Navigator.of(context).pushReplacementNamed('/main');
-      }
-    } catch (e) {
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text('Google Sign-In: ${e.toString()}'),
             backgroundColor: AppTheme.error,
           ),
         );
@@ -287,27 +261,6 @@ class _LoginScreenState extends State<LoginScreen>
             const SizedBox(height: 20),
             // Login button
             _buildLoginButton(),
-            const SizedBox(height: 12),
-            // Google Sign-In button
-            OutlinedButton.icon(
-              onPressed: _isLoading ? null : _handleGoogleSignIn,
-              icon: Image.asset('assets/images/google_logo.png', width: 24, height: 24),
-              label: Text(
-                'Sign in with Google',
-                style: GoogleFonts.hankenGrotesk(
-                  fontSize: 15,
-                  fontWeight: FontWeight.w600,
-                  color: AppTheme.primary,
-                ),
-              ),
-              style: OutlinedButton.styleFrom(
-                padding: const EdgeInsets.symmetric(vertical: 12),
-                side: BorderSide(color: AppTheme.primary.withValues(alpha: 0.3)),
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(12),
-                ),
-              ),
-            ),
             // Footer
             const SizedBox(height: 20),
             Container(
@@ -451,80 +404,58 @@ class _LoginScreenState extends State<LoginScreen>
   }
 
   Widget _buildLoginButton() {
-    return Column(
-      children: [
-        SizedBox(
-          width: double.infinity,
-          height: AppTheme.touchTarget,
-          child: ElevatedButton(
-            onPressed: _handleLogin,
-            style: ElevatedButton.styleFrom(
-              backgroundColor: AppTheme.primary,
-              foregroundColor: AppTheme.onPrimary,
-              shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(12),
-              ),
-              elevation: 8,
-              shadowColor: AppTheme.primary.withValues(alpha: 0.2),
-            ),
-            child: _isLoading
-                ? Row(
-                    mainAxisAlignment: MainAxisAlignment.center,
-                    children: [
-                      SizedBox(
-                        width: 20,
-                        height: 20,
-                        child: CircularProgressIndicator(
-                          strokeWidth: 2,
-                          valueColor:
-                              AlwaysStoppedAnimation(AppTheme.onPrimary),
-                        ),
-                      ),
-                      const SizedBox(width: 12),
-                      Text(
-                        'Processing...',
-                        style: GoogleFonts.hankenGrotesk(
-                          fontSize: 20,
-                          fontWeight: FontWeight.w600,
-                        ),
-                      ),
-                    ],
-                  )
-                : Row(
-                    mainAxisAlignment: MainAxisAlignment.center,
-                    children: [
-                      Text(
-                        _isSignUpMode ? 'Register Account' : 'Login',
-                        style: GoogleFonts.hankenGrotesk(
-                          fontSize: 20,
-                          fontWeight: FontWeight.w600,
-                        ),
-                      ),
-                      const SizedBox(width: 8),
-                      const Icon(Icons.arrow_forward, size: 20),
-                    ],
+    return SizedBox(
+      width: double.infinity,
+      height: AppTheme.touchTarget,
+      child: ElevatedButton(
+        onPressed: _handleLogin,
+        style: ElevatedButton.styleFrom(
+          backgroundColor: AppTheme.primary,
+          foregroundColor: AppTheme.onPrimary,
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(12),
+          ),
+          elevation: 8,
+          shadowColor: AppTheme.primary.withValues(alpha: 0.2),
+        ),
+        child: _isLoading
+            ? Row(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  SizedBox(
+                    width: 20,
+                    height: 20,
+                    child: CircularProgressIndicator(
+                      strokeWidth: 2,
+                      valueColor:
+                          AlwaysStoppedAnimation(AppTheme.onPrimary),
+                    ),
                   ),
-          ),
-        ),
-        const SizedBox(height: 8),
-        TextButton(
-          onPressed: () {
-            setState(() {
-              _isSignUpMode = !_isSignUpMode;
-            });
-          },
-          child: Text(
-            _isSignUpMode
-                ? 'Already have an account? Sign In'
-                : 'Don\'t have an account? Register',
-            style: GoogleFonts.inter(
-              fontSize: 13,
-              fontWeight: FontWeight.w600,
-              color: AppTheme.primary,
-            ),
-          ),
-        ),
-      ],
+                  const SizedBox(width: 12),
+                  Text(
+                    'Processing...',
+                    style: GoogleFonts.hankenGrotesk(
+                      fontSize: 20,
+                      fontWeight: FontWeight.w600,
+                    ),
+                  ),
+                ],
+              )
+            : Row(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  Text(
+                    'Login',
+                    style: GoogleFonts.hankenGrotesk(
+                      fontSize: 20,
+                      fontWeight: FontWeight.w600,
+                    ),
+                  ),
+                  const SizedBox(width: 8),
+                  const Icon(Icons.arrow_forward, size: 20),
+                ],
+              ),
+      ),
     );
   }
 

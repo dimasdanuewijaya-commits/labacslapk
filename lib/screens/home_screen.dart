@@ -1,12 +1,84 @@
+import 'dart:convert';
+import 'dart:io';
+import 'package:flutter/foundation.dart';
+import 'package:http/http.dart' as http;
+import 'package:shared_preferences/shared_preferences.dart';
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
+import 'package:intl/intl.dart';
 import 'package:labtrack_pro/theme/app_theme.dart';
 import 'package:labtrack_pro/widgets/glass_card.dart';
 import 'package:labtrack_pro/widgets/stat_card.dart';
 import 'package:labtrack_pro/widgets/attendance_entry.dart';
+import 'package:labtrack_pro/screens/all_announcements_screen.dart';
 
-class HomeScreen extends StatelessWidget {
+class HomeScreen extends StatefulWidget {
   const HomeScreen({super.key});
+
+  @override
+  State<HomeScreen> createState() => _HomeScreenState();
+}
+
+class _HomeScreenState extends State<HomeScreen> {
+  bool _isLoading = true;
+  Map<String, dynamic>? _dashboardData;
+  String? _errorMessage;
+  String _userName = '';
+
+  String get _baseUrl {
+    if (kIsWeb) return 'http://127.0.0.1:8000';
+    if (Platform.isAndroid) return 'http://10.0.2.2:8000';
+    return 'http://127.0.0.1:8000';
+  }
+
+  @override
+  void initState() {
+    super.initState();
+    _fetchDashboardData();
+  }
+
+  Future<void> _fetchDashboardData() async {
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      final token = prefs.getString('access_token');
+      final userId = prefs.getInt('user_id') ?? 2; // Default fallback to 2
+      final userName = prefs.getString('user_name') ?? 'Assistant';
+      
+      if (token == null) {
+        setState(() {
+          _errorMessage = 'Sesi Anda telah habis. Silakan login kembali.';
+          _isLoading = false;
+        });
+        return;
+      }
+
+      final response = await http.get(
+        Uri.parse('$_baseUrl/dashboard/$userId'),
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': 'Bearer $token',
+        },
+      );
+
+      if (response.statusCode == 200) {
+        setState(() {
+          _dashboardData = jsonDecode(response.body);
+          _userName = userName;
+          _isLoading = false;
+        });
+      } else {
+        setState(() {
+          _errorMessage = 'Gagal memuat data dashboard (Error ${response.statusCode})';
+          _isLoading = false;
+        });
+      }
+    } catch (e) {
+      setState(() {
+        _errorMessage = 'Terjadi kesalahan saat terhubung ke server lokal.';
+        _isLoading = false;
+      });
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -22,29 +94,63 @@ class HomeScreen extends StatelessWidget {
           ),
         ),
         child: SafeArea(
-          child: SingleChildScrollView(
-            padding: const EdgeInsets.all(AppTheme.containerPadding),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                _buildHeader(context),
-                const SizedBox(height: AppTheme.sectionGap),
-                _buildStatsGrid(context),
-                const SizedBox(height: AppTheme.elementGap),
-                _buildSecondaryStats(context),
-                const SizedBox(height: AppTheme.elementGap),
-                _buildSalaryCard(context),
-                const SizedBox(height: AppTheme.sectionGap),
-                _buildAttendanceHistory(context),
-                const SizedBox(height: AppTheme.sectionGap),
-                _buildAnnouncements(context),
-                const SizedBox(height: 100), // Bottom nav space
-              ],
+          child: RefreshIndicator(
+            onRefresh: _fetchDashboardData,
+            color: AppTheme.primary,
+            backgroundColor: AppTheme.surface,
+            child: SingleChildScrollView(
+              physics: const AlwaysScrollableScrollPhysics(),
+              padding: const EdgeInsets.all(AppTheme.containerPadding),
+            child: _isLoading
+                ? const Center(
+                    child: Padding(
+                      padding: EdgeInsets.only(top: 100.0),
+                      child: CircularProgressIndicator(),
+                    ),
+                  )
+                : _errorMessage != null
+                    ? Center(
+                        child: Padding(
+                          padding: const EdgeInsets.only(top: 100.0),
+                          child: Text(
+                            _errorMessage!,
+                            style: const TextStyle(color: AppTheme.error),
+                          ),
+                        ),
+                      )
+                    : Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          _buildHeader(context),
+                          const SizedBox(height: AppTheme.sectionGap),
+                          _buildStatsGrid(context),
+                          const SizedBox(height: AppTheme.elementGap),
+                          _buildSecondaryStats(context),
+                          const SizedBox(height: AppTheme.elementGap),
+                          _buildSalaryCard(context),
+                          const SizedBox(height: AppTheme.sectionGap),
+                          _buildAnnouncements(context),
+                          const SizedBox(height: 100), // Bottom nav space
+                        ],
+                      ),
             ),
           ),
         ),
       ),
     );
+  }
+
+  String get _greeting {
+    final hour = DateTime.now().hour;
+    if (hour < 12) {
+      return 'Good Morning,';
+    } else if (hour < 17) {
+      return 'Good Afternoon,';
+    } else if (hour < 20) {
+      return 'Good Evening,';
+    } else {
+      return 'Good Night,';
+    }
   }
 
   Widget _buildHeader(BuildContext context) {
@@ -57,12 +163,12 @@ class HomeScreen extends StatelessWidget {
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               Text(
-                'Good Morning,',
+                _greeting,
                 style: Theme.of(context).textTheme.labelMedium,
               ),
               const SizedBox(height: 4),
               Text(
-                'Dimas Danue Wijaya',
+                _userName.isNotEmpty ? _userName : 'Assistant',
                 style: Theme.of(context).textTheme.headlineMedium?.copyWith(
                       fontWeight: FontWeight.w700,
                     ),
@@ -79,50 +185,6 @@ class HomeScreen extends StatelessWidget {
         ),
         Row(
           children: [
-            // Notification bell
-            Stack(
-              children: [
-                Container(
-                  width: 40,
-                  height: 40,
-                  decoration: BoxDecoration(
-                    color: AppTheme.surfaceContainer,
-                    shape: BoxShape.circle,
-                    border: Border.all(
-                      color: Colors.white.withValues(alpha: 0.4),
-                    ),
-                    boxShadow: [
-                      BoxShadow(
-                        color: Colors.black.withValues(alpha: 0.05),
-                        blurRadius: 4,
-                      ),
-                    ],
-                  ),
-                  child: IconButton(
-                    icon: const Icon(Icons.notifications_outlined, size: 20),
-                    onPressed: () {
-                      Navigator.of(context).pushNamed('/notifications');
-                    },
-                    color: AppTheme.onSurface,
-                    padding: EdgeInsets.zero,
-                  ),
-                ),
-                Positioned(
-                  top: 8,
-                  right: 10,
-                  child: Container(
-                    width: 8,
-                    height: 8,
-                    decoration: BoxDecoration(
-                      color: AppTheme.error,
-                      shape: BoxShape.circle,
-                      border: Border.all(color: AppTheme.surface, width: 1),
-                    ),
-                  ),
-                ),
-              ],
-            ),
-            const SizedBox(width: 12),
             // Avatar
             Container(
               width: 40,
@@ -157,44 +219,31 @@ class HomeScreen extends StatelessWidget {
       children: [
         StatCard(
           label: 'Present',
-          value: '7',
+          value: _dashboardData?['total_hadir']?.toString() ?? '0',
           subtitle: 'Days',
           icon: Icons.schedule,
           iconColor: AppTheme.primary,
         ),
         StatCard(
-          label: 'Late',
-          value: '5',
+          label: 'Permit',
+          value: _dashboardData?['total_izin']?.toString() ?? '0',
           subtitle: 'Days',
-          icon: Icons.error_outline,
-          iconColor: AppTheme.error,
-        ),
-        StatCard(
-          label: 'Absent',
-          value: '1',
-          subtitle: 'Days',
-          icon: Icons.person_off_outlined,
-          iconColor: AppTheme.error,
+          icon: Icons.assignment_outlined,
+          iconColor: AppTheme.tertiary,
         ),
         StatCard(
           label: 'Hours',
-          value: '27.7',
-          icon: Icons.pie_chart,
-          iconColor: AppTheme.tertiary,
-          subtitleWidget: Row(
-            children: [
-              Icon(Icons.arrow_upward, size: 12, color: AppTheme.emerald),
-              const SizedBox(width: 2),
-              Text(
-                '2%',
-                style: GoogleFonts.jetBrainsMono(
-                  fontSize: 10,
-                  fontWeight: FontWeight.w500,
-                  color: AppTheme.emerald,
-                ),
-              ),
-            ],
-          ),
+          value: _dashboardData?['total_hours_str']?.toString() ?? '0h 0m',
+          subtitle: 'Monthly',
+          icon: Icons.timer_outlined,
+          iconColor: AppTheme.secondary,
+        ),
+        StatCard(
+          label: 'Absent',
+          value: _dashboardData?['total_alpha']?.toString() ?? '0',
+          subtitle: 'Days',
+          icon: Icons.person_off_outlined,
+          iconColor: AppTheme.error,
         ),
       ],
     );
@@ -210,15 +259,15 @@ class HomeScreen extends StatelessWidget {
       childAspectRatio: 1.5,
       children: [
         StatCard(
-          label: 'Leaderboard',
-          value: '#3',
-          subtitle: 'Rank',
-          icon: Icons.leaderboard,
+          label: 'Status',
+          value: (_dashboardData?['total_alpha'] ?? 0) > 2 ? 'Warning' : 'Good',
+          subtitle: 'Condition',
+          icon: Icons.health_and_safety,
           iconColor: AppTheme.primary,
         ),
         StatCard(
           label: 'Points',
-          value: '40.5',
+          value: _dashboardData?['poin_mutu']?.toString() ?? '0',
           icon: Icons.grade,
           iconColor: AppTheme.tertiary,
           subtitleWidget: Row(
@@ -258,7 +307,7 @@ class HomeScreen extends StatelessWidget {
               ),
               const SizedBox(height: 4),
               Text(
-                'Rp 412.000',
+                NumberFormat.currency(locale: 'id', symbol: 'Rp ', decimalDigits: 0).format(_dashboardData?['gaji_bulan_ini'] ?? 0),
                 style: Theme.of(context).textTheme.headlineMedium?.copyWith(
                       fontWeight: FontWeight.w700,
                       color: AppTheme.primary,
@@ -284,60 +333,15 @@ class HomeScreen extends StatelessWidget {
     );
   }
 
-  Widget _buildAttendanceHistory(BuildContext context) {
-    return Column(
-      children: [
-        Row(
-          mainAxisAlignment: MainAxisAlignment.spaceBetween,
-          children: [
-            Expanded(
-              child: Text(
-                'Recent Attendance',
-                style: Theme.of(context).textTheme.headlineSmall?.copyWith(
-                      fontWeight: FontWeight.w700,
-                    ),
-              ),
-            ),
-            const SizedBox(width: 5),
-            GestureDetector(
-              onTap: () {
-                // Navigate to attendance tab
-              },
-              child: Text(
-                'View History',
-                style: Theme.of(context).textTheme.labelMedium?.copyWith(
-                      color: AppTheme.primary,
-                    ),
-              ),
-            ),
-          ],
-        ),
-        const SizedBox(height: 12),
-        const AttendanceEntry(
-          title: 'JKL - 3KB02-A',
-          date: 'Today, 12 Aug 2024',
-          timeRange: '07:55 - 10:05',
-          status: 'Present',
-        ),
-        const SizedBox(height: 12),
-        const AttendanceEntry(
-          title: 'MCS - 2DC02-B',
-          date: 'Friday, 09 Aug 2024',
-          timeRange: '10:15 - 12:00',
-          status: 'Late',
-        ),
-        const SizedBox(height: 12),
-        const AttendanceEntry(
-          title: 'Piket',
-          date: 'Thursday, 08 Aug 2024',
-          timeRange: '08:00 - 10:00',
-          status: 'Present',
-        ),
-      ],
-    );
-  }
-
   Widget _buildAnnouncements(BuildContext context) {
+    final ann = _dashboardData?['latest_announcement'];
+    if (ann == null) return const SizedBox.shrink();
+
+    final title = ann['title'] ?? 'Pengumuman';
+    final content = ann['content'] ?? '';
+    final tag = ann['tag'] ?? 'INFO';
+    final imageUrl = ann['image_url'];
+
     return Column(
       children: [
         Row(
@@ -351,13 +355,18 @@ class HomeScreen extends StatelessWidget {
                     ),
               ),
             ),
-            const SizedBox(width: 8),
             GestureDetector(
-              onTap: () {},
+              onTap: () {
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(builder: (context) => const AllAnnouncementsScreen()),
+                );
+              },
               child: Text(
                 'View All',
-                style: Theme.of(context).textTheme.labelMedium?.copyWith(
+                style: Theme.of(context).textTheme.labelLarge?.copyWith(
                       color: AppTheme.primary,
+                      fontWeight: FontWeight.w600,
                     ),
               ),
             ),
@@ -381,7 +390,7 @@ class HomeScreen extends StatelessWidget {
                       const Icon(Icons.campaign, size: 20, color: AppTheme.primary),
                       const SizedBox(width: 8),
                       Text(
-                        'NEW UPDATE',
+                        tag,
                         style: GoogleFonts.jetBrainsMono(
                           fontSize: 10,
                           fontWeight: FontWeight.w700,
@@ -392,13 +401,26 @@ class HomeScreen extends StatelessWidget {
                     ],
                   ),
                   const SizedBox(height: 8),
+                  if (imageUrl != null && imageUrl.toString().isNotEmpty) ...[
+                    ClipRRect(
+                      borderRadius: BorderRadius.circular(12),
+                      child: Image.network(
+                        'http://127.0.0.1:8000$imageUrl',
+                        width: double.infinity,
+                        height: 150,
+                        fit: BoxFit.cover,
+                        errorBuilder: (context, error, stackTrace) => const SizedBox.shrink(),
+                      ),
+                    ),
+                    const SizedBox(height: 12),
+                  ],
                   Text(
-                    'Lab Safety Protocol v2.4',
+                    title,
                     style: Theme.of(context).textTheme.headlineSmall,
                   ),
                   const SizedBox(height: 4),
                   Text(
-                    'Please review the updated safety guidelines for the Bio-Metrics lab before your next shift.',
+                    content,
                     style: Theme.of(context).textTheme.bodyMedium?.copyWith(
                           color: AppTheme.onSurfaceVariant,
                         ),

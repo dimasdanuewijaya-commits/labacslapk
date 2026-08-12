@@ -5,7 +5,7 @@ class ShiftData {
   final String shiftLabel;
   final String timeRange;
   final String activity;
-  final int points;
+  final num points;
   final bool isActive;
 
   const ShiftData({

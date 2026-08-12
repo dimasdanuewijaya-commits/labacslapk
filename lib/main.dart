@@ -1,19 +1,20 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
-import 'package:firebase_core/firebase_core.dart';
-import 'package:labtrack_pro/firebase_options.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 import 'package:labtrack_pro/theme/app_theme.dart';
 import 'package:labtrack_pro/screens/login_screen.dart';
 import 'package:labtrack_pro/screens/main_shell.dart';
-import 'package:labtrack_pro/screens/swap_notifications_screen.dart';
-import 'package:labtrack_pro/screens/new_swap_request_screen.dart';
-import 'package:labtrack_pro/screens/select_shift_screen.dart';
+
+
+import 'package:labtrack_pro/screens/admin/admin_main_shell.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
-  await Firebase.initializeApp(
-    options: DefaultFirebaseOptions.currentPlatform,
-  );
+  
+  final prefs = await SharedPreferences.getInstance();
+  final token = prefs.getString('access_token');
+  final initialRoute = token != null ? '/main' : '/login';
+
   SystemChrome.setSystemUIOverlayStyle(
     const SystemUiOverlayStyle(
       statusBarColor: Colors.transparent,
@@ -22,11 +23,13 @@ void main() async {
       systemNavigationBarIconBrightness: Brightness.dark,
     ),
   );
-  runApp(const LabTrackProApp());
+  runApp(LabTrackProApp(initialRoute: initialRoute));
 }
 
 class LabTrackProApp extends StatelessWidget {
-  const LabTrackProApp({super.key});
+  final String initialRoute;
+
+  const LabTrackProApp({super.key, required this.initialRoute});
 
   @override
   Widget build(BuildContext context) {
@@ -34,13 +37,12 @@ class LabTrackProApp extends StatelessWidget {
       title: 'LabAssistant Pro',
       debugShowCheckedModeBanner: false,
       theme: AppTheme.lightTheme,
-      initialRoute: '/login',
+      initialRoute: initialRoute,
       routes: {
         '/login': (context) => const LoginScreen(),
         '/main': (context) => const MainShell(),
-        '/notifications': (context) => const SwapNotificationsScreen(),
-        '/new-swap': (context) => const NewSwapRequestScreen(),
-        '/select-shift': (context) => const SelectShiftScreen(),
+        '/admin_main': (context) => const AdminMainShell(),
+
       },
     );
   }

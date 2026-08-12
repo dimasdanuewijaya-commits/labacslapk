@@ -4,67 +4,74 @@ import 'package:labtrack_pro/theme/app_theme.dart';
 import 'package:labtrack_pro/widgets/glass_card.dart';
 
 import 'package:labtrack_pro/services/auth_service.dart';
+import 'package:shared_preferences/shared_preferences.dart';
+import 'package:labtrack_pro/screens/placeholder_screen.dart';
+import 'package:labtrack_pro/screens/change_password_screen.dart';
 
 class ProfileScreen extends StatelessWidget {
   const ProfileScreen({super.key});
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      backgroundColor: AppTheme.background,
-      appBar: AppBar(
-        backgroundColor: AppTheme.surface.withValues(alpha: 0.8),
-        elevation: 0,
-        scrolledUnderElevation: 0,
-        leading: IconButton(
-          icon: const Icon(Icons.arrow_back, color: AppTheme.primary),
-          onPressed: () {
-            if (Navigator.of(context).canPop()) {
-              Navigator.of(context).pop();
-            }
-          },
-        ),
-        title: Text(
-          'Profile',
-          style: GoogleFonts.hankenGrotesk(
-            fontSize: 20,
-            fontWeight: FontWeight.w600,
-            color: AppTheme.primary,
+    return FutureBuilder<SharedPreferences>(
+      future: SharedPreferences.getInstance(),
+      builder: (context, snapshot) {
+        final prefs = snapshot.data;
+        final displayName = prefs?.getString('user_name') ?? 'Assistant';
+        final userEmail = prefs?.getString('user_email') ?? 'N/A';
+        final userRfid = prefs?.getString('user_rfid') ?? 'N/A';
+
+        return Scaffold(
+          backgroundColor: AppTheme.background,
+          appBar: AppBar(
+            backgroundColor: AppTheme.surface.withValues(alpha: 0.8),
+            elevation: 0,
+            scrolledUnderElevation: 0,
+            leading: IconButton(
+              icon: const Icon(Icons.arrow_back, color: AppTheme.primary),
+              onPressed: () {
+                if (Navigator.of(context).canPop()) {
+                  Navigator.of(context).pop();
+                }
+              },
+            ),
+            title: Text(
+              'Profile',
+              style: GoogleFonts.hankenGrotesk(
+                fontSize: 20,
+                fontWeight: FontWeight.w600,
+                color: AppTheme.primary,
+              ),
+            ),
+            actions: [
+              IconButton(
+                icon: const Icon(Icons.more_vert, color: AppTheme.primary),
+                onPressed: () {},
+              ),
+            ],
           ),
-        ),
-        actions: [
-          IconButton(
-            icon: const Icon(Icons.more_vert, color: AppTheme.primary),
-            onPressed: () {},
+          body: SingleChildScrollView(
+            padding: const EdgeInsets.symmetric(
+              horizontal: AppTheme.containerPadding,
+              vertical: AppTheme.sectionGap,
+            ),
+            child: Column(
+              children: [
+                _buildProfileHeader(context, displayName, userEmail, userRfid),
+                const SizedBox(height: AppTheme.sectionGap),
+                _buildMenuList(context),
+                const SizedBox(height: 16),
+                _buildLogoutButton(context),
+                const SizedBox(height: 100),
+              ],
+            ),
           ),
-        ],
-      ),
-      body: SingleChildScrollView(
-        padding: const EdgeInsets.symmetric(
-          horizontal: AppTheme.containerPadding,
-          vertical: AppTheme.sectionGap,
-        ),
-        child: Column(
-          children: [
-            _buildProfileHeader(context),
-            const SizedBox(height: AppTheme.sectionGap),
-            _buildSemesterStats(context),
-            const SizedBox(height: AppTheme.sectionGap),
-            _buildMenuList(context),
-            const SizedBox(height: 16),
-            _buildLogoutButton(context),
-            const SizedBox(height: 100),
-          ],
-        ),
-      ),
+        );
+      },
     );
   }
 
-  Widget _buildProfileHeader(BuildContext context) {
-    final user = AuthService().currentUser;
-    final displayName = user?.displayName ?? 'Dimas Danue Wijaya';
-    final userEmail = user?.email ?? 'dimas.danue@lab.pro';
-
+  Widget _buildProfileHeader(BuildContext context, String displayName, String userEmail, String userRfid) {
     return Column(
       children: [
         // Static Avatar with gradient ring
@@ -73,6 +80,7 @@ class ProfileScreen extends StatelessWidget {
         Text(
           displayName,
           style: Theme.of(context).textTheme.headlineMedium,
+          textAlign: TextAlign.center,
         ),
         const SizedBox(height: 4),
         Text(
@@ -83,7 +91,7 @@ class ProfileScreen extends StatelessWidget {
         ),
         const SizedBox(height: 4),
         Text(
-          'RFID: 1029384756',
+          'RFID: $userRfid',
           style: GoogleFonts.jetBrainsMono(
             fontSize: 10,
             fontWeight: FontWeight.w500,
@@ -95,87 +103,14 @@ class ProfileScreen extends StatelessWidget {
     );
   }
 
-  Widget _buildSemesterStats(BuildContext context) {
-    return GlassCard(
-      borderRadius: 12,
-      padding: const EdgeInsets.all(16),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Text(
-            'TOTAL PER SEMESTER',
-            style: GoogleFonts.jetBrainsMono(
-              fontSize: 10,
-              fontWeight: FontWeight.w500,
-              letterSpacing: 0.5,
-              color: AppTheme.secondary,
-            ),
-          ),
-          const SizedBox(height: 12),
-          // 3x2 grid
-          Row(
-            children: [
-              Expanded(child: _buildStatItem(context, 'Present', '56')),
-              Expanded(child: _buildStatItem(context, 'Late', '5')),
-              Expanded(child: _buildStatItem(context, 'Absent', '1')),
-            ],
-          ),
-          const SizedBox(height: 16),
-          Row(
-            children: [
-              Expanded(child: _buildStatItem(context, 'Hours', '87.7')),
-              Expanded(child: _buildStatItem(context, 'Points', '105')),
-              Expanded(
-                child: _buildStatItem(
-                  context,
-                  'Salary',
-                  'Rp 1.250.000',
-                  valueColor: AppTheme.primary,
-                ),
-              ),
-            ],
-          ),
-        ],
-      ),
-    );
-  }
 
-  Widget _buildStatItem(
-    BuildContext context,
-    String label,
-    String value, {
-    Color? valueColor,
-  }) {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Text(
-          label,
-          style: GoogleFonts.jetBrainsMono(
-            fontSize: 10,
-            fontWeight: FontWeight.w500,
-            color: AppTheme.secondary,
-          ),
-        ),
-        const SizedBox(height: 4),
-        Text(
-          value,
-          style: GoogleFonts.inter(
-            fontSize: 16,
-            fontWeight: FontWeight.w600,
-            color: valueColor ?? AppTheme.onSurface,
-          ),
-        ),
-      ],
-    );
-  }
 
   Widget _buildMenuList(BuildContext context) {
     final menuItems = [
       {'icon': Icons.person_outline, 'label': 'Personal Information'},
       {'icon': Icons.bar_chart, 'label': 'Work Statistics'},
       {'icon': Icons.security, 'label': 'Account Security'},
-      {'icon': Icons.notifications_outlined, 'label': 'Notification Settings'},
+      {'icon': Icons.lock_outline, 'label': 'Change Password'},
       {'icon': Icons.help_outline, 'label': 'Help & Support'},
     ];
 
@@ -191,7 +126,21 @@ class ProfileScreen extends StatelessWidget {
           return Column(
             children: [
               InkWell(
-                onTap: () {},
+                onTap: () {
+                  if (item['label'] == 'Change Password') {
+                    Navigator.push(
+                      context,
+                      MaterialPageRoute(builder: (context) => const ChangePasswordScreen()),
+                    );
+                  } else {
+                    Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                        builder: (context) => PlaceholderScreen(title: item['label'] as String),
+                      ),
+                    );
+                  }
+                },
                 child: Padding(
                   padding: const EdgeInsets.all(16),
                   child: Row(

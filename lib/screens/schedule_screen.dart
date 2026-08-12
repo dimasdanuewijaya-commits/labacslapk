@@ -2,6 +2,8 @@ import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:labtrack_pro/theme/app_theme.dart';
 import 'package:labtrack_pro/widgets/glass_card.dart';
+import 'package:shared_preferences/shared_preferences.dart';
+import 'package:labtrack_pro/services/schedule_service.dart';
 
 class ScheduleScreen extends StatefulWidget {
   const ScheduleScreen({super.key});
@@ -17,6 +19,11 @@ class _ScheduleScreenState extends State<ScheduleScreen> {
   final DateTime _minMonth = DateTime(2026, 5);
   final DateTime _maxMonth = DateTime(2026, 10);
 
+  final ScheduleService _scheduleService = ScheduleService();
+  List<dynamic> _schedules = [];
+  bool _isLoading = true;
+  String? _error;
+
   @override
   void initState() {
     super.initState();
@@ -30,6 +37,28 @@ class _ScheduleScreenState extends State<ScheduleScreen> {
       initial = _maxMonth;
     }
     _currentMonth = initial;
+
+    _fetchMySchedules();
+  }
+
+  Future<void> _fetchMySchedules() async {
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      final userId = prefs.getInt('user_id');
+      if (userId != null) {
+        final data = await _scheduleService.getUserSchedules(userId);
+        if (mounted) {
+          setState(() {
+            _schedules = data;
+            _isLoading = false;
+          });
+        }
+      } else {
+        if (mounted) setState(() { _error = "User ID tidak ditemukan"; _isLoading = false; });
+      }
+    } catch (e) {
+      if (mounted) setState(() { _error = e.toString(); _isLoading = false; });
+    }
   }
 
   @override
@@ -52,8 +81,7 @@ class _ScheduleScreenState extends State<ScheduleScreen> {
               _buildCalendar(context),
               const SizedBox(height: AppTheme.sectionGap),
               _buildMySchedule(context),
-              const SizedBox(height: AppTheme.sectionGap),
-              _buildSwapButton(context),
+
             ],
           ),
         ),
@@ -227,27 +255,51 @@ class _ScheduleScreenState extends State<ScheduleScreen> {
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         Text(
-          'My Schedule',
+          'Jadwal Saya',
           style: Theme.of(context).textTheme.headlineSmall,
         ),
         const SizedBox(height: 12),
-        _buildShiftCard(
-          context,
-          shift: 'Shift 1',
-          subject: 'JKL',
-          classGroup: '3KB02-A',
-          day: 'Thursday',
-          time: '08:00 - 10:00',
-        ),
-        const SizedBox(height: 12),
-        _buildShiftCard(
-          context,
-          shift: 'Shift 2',
-          subject: 'MCS',
-          classGroup: '2DC02-B',
-          day: 'Friday',
-          time: '10:00 - 12:00',
-        ),
+        if (_isLoading)
+          const Center(child: CircularProgressIndicator())
+        else if (_error != null)
+          Center(child: Text(_error!, style: const TextStyle(color: Colors.red)))
+        else if (_schedules.isEmpty)
+          const Center(child: Text('Belum ada jadwal terdaftar.'))
+        else
+          ..._schedules.map((sched) {
+            String rawActivity = sched['activity'] ?? '';
+            String subject = 'Unknown';
+            String classGroup = '-';
+            
+            if (rawActivity.startsWith('Teaching')) {
+              subject = 'Teaching';
+              classGroup = rawActivity.replaceFirst('Teaching - ', '').trim();
+            } else if (rawActivity.toLowerCase() == 'piket') {
+              subject = 'Piket';
+            } else {
+              subject = rawActivity;
+            }
+
+            // Mock times based on shift
+            String time = '00:00 - 00:00';
+            if (sched['shift_number'] == 1) time = '08:00 - 10:00';
+            if (sched['shift_number'] == 2) time = '10:00 - 12:00';
+            if (sched['shift_number'] == 3) time = '12:00 - 14:00';
+            if (sched['shift_number'] == 4) time = '14:00 - 16:00';
+            if (sched['shift_number'] == 5) time = '16:00 - 18:00';
+
+            return Padding(
+              padding: const EdgeInsets.only(bottom: 12),
+              child: _buildShiftCard(
+                context,
+                shift: 'Shift ${sched['shift_number']}',
+                subject: subject,
+                classGroup: classGroup,
+                day: sched['day_of_week'],
+                time: time,
+              ),
+            );
+          }).toList(),
       ],
     );
   }
@@ -273,7 +325,7 @@ class _ScheduleScreenState extends State<ScheduleScreen> {
               borderRadius: BorderRadius.circular(100),
             ),
             child: Text(
-              shift.toUpperCase(),
+              day.toUpperCase(),
               style: GoogleFonts.jetBrainsMono(
                 fontSize: 10,
                 fontWeight: FontWeight.w700,
@@ -292,7 +344,7 @@ class _ScheduleScreenState extends State<ScheduleScreen> {
           const SizedBox(height: 12),
           _buildInfoRow(Icons.groups, classGroup),
           const SizedBox(height: 8),
-          _buildInfoRow(Icons.calendar_today, day),
+          _buildInfoRow(Icons.tag, shift),
           const SizedBox(height: 8),
           _buildInfoRow(Icons.schedule, time),
         ],
@@ -315,34 +367,6 @@ class _ScheduleScreenState extends State<ScheduleScreen> {
           ),
         ),
       ],
-    );
-  }
-
-  Widget _buildSwapButton(BuildContext context) {
-    return SizedBox(
-      width: double.infinity,
-      height: AppTheme.touchTarget,
-      child: ElevatedButton(
-        onPressed: () {
-          Navigator.of(context).pushNamed('/new-swap');
-        },
-        style: ElevatedButton.styleFrom(
-          backgroundColor: AppTheme.primary,
-          foregroundColor: AppTheme.onPrimary,
-          shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(12),
-          ),
-          elevation: 8,
-          shadowColor: AppTheme.primary.withValues(alpha: 0.2),
-        ),
-        child: Text(
-          'SWAP',
-          style: GoogleFonts.inter(
-            fontSize: 16,
-            fontWeight: FontWeight.w500,
-          ),
-        ),
-      ),
     );
   }
 }

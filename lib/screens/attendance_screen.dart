@@ -1,3 +1,8 @@
+import 'dart:convert';
+import 'dart:io';
+import 'package:flutter/foundation.dart';
+import 'package:http/http.dart' as http;
+import 'package:shared_preferences/shared_preferences.dart';
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:labtrack_pro/theme/app_theme.dart';
@@ -35,83 +40,109 @@ class _AttendanceScreenState extends State<AttendanceScreen> {
 
   final List<String> _availableMonths = [
     'All Months',
-    'August 2024',
-    'July 2024',
-    'June 2024',
   ];
 
-  final List<_AttendanceDayData> _allRecords = [
-    _AttendanceDayData(
-      date: 'Tuesday, 13 Aug 2024',
-      dateTime: DateTime(2024, 8, 13),
-      checkIn: '07:55 AM',
-      checkOut: '10:05 AM',
-      monthYear: 'August 2024',
-      shifts: [
-        ShiftData(shiftLabel: 'Shift 1 (07:30 - 09:10)', timeRange: '07:30 - 09:10', activity: 'Teaching', points: 1, isActive: true),
-        ShiftData(shiftLabel: 'Shift 2 (09:20 - 11:00)', timeRange: '09:20 - 11:00', activity: 'Kosong', points: 0),
-        ShiftData(shiftLabel: 'Shift 3 (11:10 - 12:50)', timeRange: '11:10 - 12:50', activity: 'Kosong', points: 0),
-        ShiftData(shiftLabel: 'Shift 4 (13:00 - 14:40)', timeRange: '13:00 - 14:40', activity: 'Kosong', points: 0),
-        ShiftData(shiftLabel: 'Shift 5 (14:50 - 16:30)', timeRange: '14:50 - 16:30', activity: 'Kosong', points: 0),
-      ],
-    ),
-    _AttendanceDayData(
-      date: 'Thursday, 18 Jul 2024',
-      dateTime: DateTime(2024, 7, 18),
-      checkIn: '07:28 AM',
-      checkOut: '12:55 PM',
-      monthYear: 'July 2024',
-      shifts: [
-        ShiftData(shiftLabel: 'Shift 1 (07:30 - 09:10)', timeRange: '07:30 - 09:10', activity: 'Teaching', points: 1, isActive: true),
-        ShiftData(shiftLabel: 'Shift 2 (09:20 - 11:00)', timeRange: '09:20 - 11:00', activity: 'Stand By', points: 1, isActive: true),
-        ShiftData(shiftLabel: 'Shift 3 (11:10 - 12:50)', timeRange: '11:10 - 12:50', activity: 'Kosong', points: 0),
-        ShiftData(shiftLabel: 'Shift 4 (13:00 - 14:40)', timeRange: '13:00 - 14:40', activity: 'Piket', points: 2, isActive: true),
-        ShiftData(shiftLabel: 'Shift 5 (14:50 - 16:30)', timeRange: '14:50 - 16:30', activity: 'Kosong', points: 0),
-      ],
-    ),
-    _AttendanceDayData(
-      date: 'Wednesday, 10 Jul 2024',
-      dateTime: DateTime(2024, 7, 10),
-      checkIn: '07:20 AM',
-      checkOut: '11:05 AM',
-      monthYear: 'July 2024',
-      shifts: [
-        ShiftData(shiftLabel: 'Shift 1 (07:30 - 09:10)', timeRange: '07:30 - 09:10', activity: 'Kosong', points: 0),
-        ShiftData(shiftLabel: 'Shift 2 (09:20 - 11:00)', timeRange: '09:20 - 11:00', activity: 'Teaching', points: 2, isActive: true),
-        ShiftData(shiftLabel: 'Shift 3 (11:10 - 12:50)', timeRange: '11:10 - 12:50', activity: 'Piket', points: 1, isActive: true),
-        ShiftData(shiftLabel: 'Shift 4 (13:00 - 14:40)', timeRange: '13:00 - 14:40', activity: 'Stand By', points: 1, isActive: true),
-        ShiftData(shiftLabel: 'Shift 5 (14:50 - 16:30)', timeRange: '14:50 - 16:30', activity: 'Kosong', points: 0),
-      ],
-    ),
-    _AttendanceDayData(
-      date: 'Friday, 28 Jun 2024',
-      dateTime: DateTime(2024, 6, 28),
-      checkIn: '07:45 AM',
-      checkOut: '04:15 PM',
-      monthYear: 'June 2024',
-      shifts: [
-        ShiftData(shiftLabel: 'Shift 1 (07:30 - 09:10)', timeRange: '07:30 - 09:10', activity: 'Teaching', points: 1, isActive: true),
-        ShiftData(shiftLabel: 'Shift 2 (09:20 - 11:00)', timeRange: '09:20 - 11:00', activity: 'Piket', points: 2, isActive: true),
-        ShiftData(shiftLabel: 'Shift 3 (11:10 - 12:50)', timeRange: '11:10 - 12:50', activity: 'Stand By', points: 1, isActive: true),
-        ShiftData(shiftLabel: 'Shift 4 (13:00 - 14:40)', timeRange: '13:00 - 14:40', activity: 'Teaching', points: 2, isActive: true),
-        ShiftData(shiftLabel: 'Shift 5 (14:50 - 16:30)', timeRange: '14:50 - 16:30', activity: 'Kosong', points: 0),
-      ],
-    ),
-    _AttendanceDayData(
-      date: 'Monday, 10 Jun 2024',
-      dateTime: DateTime(2024, 6, 10),
-      checkIn: '07:30 AM',
-      checkOut: '02:30 PM',
-      monthYear: 'June 2024',
-      shifts: [
-        ShiftData(shiftLabel: 'Shift 1 (07:30 - 09:10)', timeRange: '07:30 - 09:10', activity: 'Piket', points: 1, isActive: true),
-        ShiftData(shiftLabel: 'Shift 2 (09:20 - 11:00)', timeRange: '09:20 - 11:00', activity: 'Teaching', points: 1, isActive: true),
-        ShiftData(shiftLabel: 'Shift 3 (11:10 - 12:50)', timeRange: '11:10 - 12:50', activity: 'Kosong', points: 0),
-        ShiftData(shiftLabel: 'Shift 4 (13:00 - 14:40)', timeRange: '13:00 - 14:40', activity: 'Stand By', points: 1, isActive: true),
-        ShiftData(shiftLabel: 'Shift 5 (14:50 - 16:30)', timeRange: '14:50 - 16:30', activity: 'Kosong', points: 0),
-      ],
-    ),
-  ];
+  bool _isLoading = true;
+  String? _errorMessage;
+
+  String get _baseUrl {
+    if (kIsWeb) return 'http://127.0.0.1:8000';
+    if (Platform.isAndroid) return 'http://10.0.2.2:8000';
+    return 'http://127.0.0.1:8000';
+  }
+
+  @override
+  void initState() {
+    super.initState();
+    _fetchAttendanceData();
+  }
+
+  Future<void> _fetchAttendanceData() async {
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      final token = prefs.getString('access_token');
+      final userId = prefs.getInt('user_id') ?? 2;
+
+      if (token == null) {
+        setState(() {
+          _errorMessage = 'Sesi habis.';
+          _isLoading = false;
+        });
+        return;
+      }
+
+      final response = await http.get(
+        Uri.parse('$_baseUrl/attendance/?user_id=$userId'),
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': 'Bearer $token',
+        },
+      );
+
+      if (response.statusCode == 200) {
+        final data = jsonDecode(response.body);
+        final attendances = data['records'] as List? ?? [];
+        
+        final List<_AttendanceDayData> fetchedRecords = [];
+        
+        for (var att in attendances) {
+          final dateStr = att['date'] ?? '';
+          
+          // Try to extract month and year for filtering (e.g. "08 Aug 2026")
+          String monthYear = 'Unknown Month';
+          try {
+             final parts = dateStr.split(' ');
+             if (parts.length >= 3) {
+               monthYear = '${parts[parts.length - 2]} ${parts[parts.length - 1]}';
+               if (!_availableMonths.contains(monthYear)) {
+                 _availableMonths.add(monthYear);
+               }
+             }
+          } catch(e) {}
+
+          final List<ShiftData> mappedShifts = [];
+          if (att['shifts'] != null) {
+            for (var shift in att['shifts']) {
+              final isActive = (shift['points'] ?? 0) > 0;
+              mappedShifts.add(ShiftData(
+                shiftLabel: shift['shift_label'] ?? 'Unknown Shift',
+                timeRange: shift['time_range'] ?? '',
+                activity: shift['activity'] ?? 'Kosong',
+                points: shift['points'] ?? 0,
+                isActive: isActive,
+              ));
+            }
+          }
+          
+          fetchedRecords.add(_AttendanceDayData(
+            date: dateStr,
+            dateTime: DateTime.now(), // Fallback (proper parsing can be complex)
+            checkIn: att['check_in'] ?? '--:--',
+            checkOut: att['check_out'] ?? '--:--',
+            monthYear: monthYear,
+            shifts: mappedShifts,
+          ));
+        }
+
+        setState(() {
+          _allRecords = fetchedRecords;
+          _isLoading = false;
+        });
+      } else {
+        setState(() {
+          _errorMessage = 'Gagal memuat data absensi.';
+          _isLoading = false;
+        });
+      }
+    } catch (e) {
+      setState(() {
+        _errorMessage = 'Terjadi kesalahan saat terhubung ke server.';
+        _isLoading = false;
+      });
+    }
+  }
+
+  List<_AttendanceDayData> _allRecords = [];
 
   List<_AttendanceDayData> get _filteredRecords {
     List<_AttendanceDayData> list = _selectedMonth == 'All Months'
@@ -372,73 +403,83 @@ class _AttendanceScreenState extends State<AttendanceScreen> {
           ),
         ],
       ),
-      body: SingleChildScrollView(
-        padding: const EdgeInsets.all(AppTheme.containerPadding),
-        child: Column(
-          children: [
-            // Day sections or Empty State
-            if (records.isEmpty)
-              Padding(
-                padding: const EdgeInsets.symmetric(vertical: 40),
-                child: Center(
-                  child: Column(
-                    children: [
-                      Icon(Icons.calendar_today_outlined, size: 48, color: AppTheme.onSurfaceVariant.withValues(alpha: 0.5)),
-                      const SizedBox(height: 12),
-                      Text(
-                        'No attendance records found for $_selectedMonth',
-                        style: GoogleFonts.hankenGrotesk(
-                          fontSize: 16,
-                          color: AppTheme.onSurfaceVariant,
+      body: RefreshIndicator(
+        onRefresh: _fetchAttendanceData,
+        color: AppTheme.primary,
+        backgroundColor: AppTheme.surface,
+        child: _isLoading 
+          ? const Center(child: CircularProgressIndicator())
+          : _errorMessage != null
+            ? Center(child: Text(_errorMessage!, style: const TextStyle(color: AppTheme.error)))
+            : SingleChildScrollView(
+                physics: const AlwaysScrollableScrollPhysics(),
+                padding: const EdgeInsets.all(AppTheme.containerPadding),
+                child: Column(
+                  children: [
+                    // Day sections or Empty State
+                    if (records.isEmpty)
+                      Padding(
+                        padding: const EdgeInsets.symmetric(vertical: 40),
+                        child: Center(
+                          child: Column(
+                            children: [
+                              Icon(Icons.calendar_today_outlined, size: 48, color: AppTheme.onSurfaceVariant.withValues(alpha: 0.5)),
+                              const SizedBox(height: 12),
+                              Text(
+                                'No attendance records found for $_selectedMonth',
+                                style: GoogleFonts.hankenGrotesk(
+                                  fontSize: 16,
+                                  color: AppTheme.onSurfaceVariant,
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                      )
+                    else
+                      ...records.map(
+                        (record) => Padding(
+                          padding: const EdgeInsets.only(bottom: AppTheme.sectionGap),
+                          child: _buildDaySection(
+                            context,
+                            date: record.date,
+                            checkIn: record.checkIn,
+                            checkOut: record.checkOut,
+                            shifts: record.shifts,
+                          ),
                         ),
                       ),
-                    ],
-                  ),
-                ),
-              )
-            else
-              ...records.map(
-                (record) => Padding(
-                  padding: const EdgeInsets.only(bottom: AppTheme.sectionGap),
-                  child: _buildDaySection(
-                    context,
-                    date: record.date,
-                    checkIn: record.checkIn,
-                    checkOut: record.checkOut,
-                    shifts: record.shifts,
-                  ),
-                ),
-              ),
 
-            const SizedBox(height: AppTheme.sectionGap),
-            // Download Report Button
-            SizedBox(
-              width: double.infinity,
-              height: AppTheme.touchTarget,
-              child: ElevatedButton.icon(
-                onPressed: () {},
-                icon: const Icon(Icons.description, size: 24),
-                label: Text(
-                  'Download Report',
-                  style: GoogleFonts.hankenGrotesk(
-                    fontSize: 20,
-                    fontWeight: FontWeight.w600,
-                  ),
-                ),
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: AppTheme.primary,
-                  foregroundColor: AppTheme.onPrimary,
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(12),
-                  ),
-                  elevation: 8,
-                  shadowColor: AppTheme.primary.withValues(alpha: 0.2),
+                    const SizedBox(height: AppTheme.sectionGap),
+                    // Download Report Button
+                    SizedBox(
+                      width: double.infinity,
+                      height: AppTheme.touchTarget,
+                      child: ElevatedButton.icon(
+                        onPressed: () {},
+                        icon: const Icon(Icons.description, size: 24),
+                        label: Text(
+                          'Download Report',
+                          style: GoogleFonts.hankenGrotesk(
+                            fontSize: 20,
+                            fontWeight: FontWeight.w600,
+                          ),
+                        ),
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: AppTheme.primary,
+                          foregroundColor: AppTheme.onPrimary,
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(12),
+                          ),
+                          elevation: 8,
+                          shadowColor: AppTheme.primary.withValues(alpha: 0.2),
+                        ),
+                      ),
+                    ),
+                    const SizedBox(height: 100),
+                  ],
                 ),
               ),
-            ),
-            const SizedBox(height: 100),
-          ],
-        ),
       ),
     );
   }
