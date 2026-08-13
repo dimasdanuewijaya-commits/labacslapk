@@ -147,6 +147,33 @@ class AuthService {
     }
   }
 
+  // Update User RFID
+  Future<void> updateUserRfid(int userId, String rfidUid) async {
+    try {
+      final response = await http.put(
+        Uri.parse('$_baseUrl/users/$userId/rfid'),
+        headers: {'Content-Type': 'application/json'},
+        body: jsonEncode({'rfid_uid': rfidUid.trim()}),
+      );
+
+      if (response.statusCode != 200) {
+        String errorMsg = 'Gagal mendaftarkan RFID.';
+        try {
+          final data = jsonDecode(response.body);
+          if (data['detail'] != null) {
+            errorMsg = data['detail'];
+          }
+        } catch (_) {}
+        throw errorMsg;
+      }
+    } catch (e) {
+      if (e is SocketException) {
+        throw 'Tidak dapat terhubung ke server lokal. Pastikan server FastAPI berjalan.';
+      }
+      rethrow;
+    }
+  }
+
   // Get All Users (Assistants)
   Future<List<dynamic>> getAssistants() async {
     try {

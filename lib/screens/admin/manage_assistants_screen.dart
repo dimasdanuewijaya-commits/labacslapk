@@ -55,6 +55,67 @@ class _ManageAssistantsScreenState extends State<ManageAssistantsScreen> {
     });
   }
 
+  void _showUpdateRfidDialog(int userId, String userName, String currentRfid) {
+    final rfidController = TextEditingController(text: currentRfid == 'Belum terdaftar' ? '' : currentRfid);
+    
+    showDialog(
+      context: context,
+      builder: (context) {
+        bool isSubmitting = false;
+        return StatefulBuilder(
+          builder: (context, setState) {
+            return AlertDialog(
+              title: Text('Update RFID untuk $userName'),
+              content: TextField(
+                controller: rfidController,
+                decoration: const InputDecoration(
+                  labelText: 'Nomor RFID',
+                  hintText: 'Tempelkan kartu lalu ketik/paste ke sini',
+                  border: OutlineInputBorder(),
+                ),
+              ),
+              actions: [
+                TextButton(
+                  onPressed: isSubmitting ? null : () => Navigator.pop(context),
+                  child: const Text('Batal'),
+                ),
+                ElevatedButton(
+                  onPressed: isSubmitting ? null : () async {
+                    final newRfid = rfidController.text.trim();
+                    if (newRfid.isEmpty) return;
+                    
+                    setState(() => isSubmitting = true);
+                    try {
+                      await _authService.updateUserRfid(userId, newRfid);
+                      if (context.mounted) {
+                        Navigator.pop(context);
+                        ScaffoldMessenger.of(context).showSnackBar(
+                          const SnackBar(content: Text('RFID berhasil diupdate!')),
+                        );
+                        _fetchAssistants(); // Refresh data
+                      }
+                    } catch (e) {
+                      if (context.mounted) {
+                        ScaffoldMessenger.of(context).showSnackBar(
+                          SnackBar(content: Text(e.toString()), backgroundColor: AppTheme.error),
+                        );
+                      }
+                    } finally {
+                      if (mounted) setState(() => isSubmitting = false);
+                    }
+                  },
+                  child: isSubmitting 
+                    ? const SizedBox(width: 16, height: 16, child: CircularProgressIndicator(strokeWidth: 2)) 
+                    : const Text('Simpan'),
+                ),
+              ],
+            );
+          }
+        );
+      }
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -67,16 +128,21 @@ class _ManageAssistantsScreenState extends State<ManageAssistantsScreen> {
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               Row(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
+                  IconButton(
+                    icon: const Icon(Icons.arrow_back_ios_new, color: AppTheme.primary, size: 24),
+                    onPressed: () => Navigator.pop(context),
+                  ),
+                  const SizedBox(width: 8),
                   Text(
                     'Kelola Asisten',
                     style: GoogleFonts.outfit(
                       color: AppTheme.primary,
-                      fontSize: 28,
+                      fontSize: 24,
                       fontWeight: FontWeight.bold,
                     ),
                   ),
+                  const Spacer(),
                   ElevatedButton.icon(
                     onPressed: _showAddAssistantDialog,
                     icon: const Icon(Icons.add, color: Colors.white, size: 18),
@@ -145,6 +211,15 @@ class _ManageAssistantsScreenState extends State<ManageAssistantsScreen> {
                                               ),
                                             ],
                                           ),
+                                        ),
+                                        IconButton(
+                                          icon: const Icon(Icons.edit_outlined, color: Colors.blueGrey),
+                                          onPressed: () => _showUpdateRfidDialog(
+                                            assistant['id'], 
+                                            assistant['name'], 
+                                            assistant['rfid_uid'] ?? 'Belum terdaftar'
+                                          ),
+                                          tooltip: 'Update RFID',
                                         ),
                                       ],
                                       ),
