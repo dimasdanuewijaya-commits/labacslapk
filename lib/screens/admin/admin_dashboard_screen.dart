@@ -3,6 +3,7 @@ import 'package:google_fonts/google_fonts.dart';
 import 'package:labtrack_pro/theme/app_theme.dart';
 import 'package:labtrack_pro/widgets/glass_card.dart';
 import 'package:labtrack_pro/services/auth_service.dart';
+import 'package:labtrack_pro/screens/admin/manage_assistants_screen.dart';
 
 class AdminDashboardScreen extends StatelessWidget {
   const AdminDashboardScreen({super.key});
@@ -21,7 +22,7 @@ class AdminDashboardScreen extends StatelessWidget {
             children: [
               _buildHeader(context),
               const SizedBox(height: 24),
-              _buildQuickStats(),
+              _buildQuickStats(context),
               const SizedBox(height: 24),
               _buildTodayAttendance(),
               const SizedBox(height: 24),
@@ -87,15 +88,22 @@ class AdminDashboardScreen extends StatelessWidget {
     );
   }
 
-  Widget _buildQuickStats() {
+  Widget _buildQuickStats(BuildContext context) {
     return Row(
       children: [
         Expanded(
-          child: _buildStatCard(
-            'Total Asisten',
-            '18',
-            Icons.people_alt_rounded,
-            AppTheme.primary,
+          child: GestureDetector(
+            onTap: () {
+              Navigator.of(context).push(
+                MaterialPageRoute(builder: (_) => const ManageAssistantsScreen()),
+              );
+            },
+            child: _buildStatCard(
+              'Total Asisten',
+              '18',
+              Icons.people_alt_rounded,
+              AppTheme.primary,
+            ),
           ),
         ),
         const SizedBox(width: 16),

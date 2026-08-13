@@ -55,9 +55,9 @@ class AdminBottomNavBar extends StatelessWidget {
                   ),
                   Expanded(
                     child: _NavItem(
-                      icon: Icons.people_outline_rounded,
-                      activeIcon: Icons.people_rounded,
-                      label: 'Asisten',
+                      icon: Icons.fact_check_outlined,
+                      activeIcon: Icons.fact_check_rounded,
+                      label: 'Attendance',
                       isActive: currentIndex == 1,
                       onTap: () => onTap(1),
                     ),

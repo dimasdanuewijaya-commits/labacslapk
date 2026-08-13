@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:labtrack_pro/theme/app_theme.dart';
 import 'package:labtrack_pro/screens/admin/admin_dashboard_screen.dart';
-import 'package:labtrack_pro/screens/admin/manage_assistants_screen.dart';
+import 'package:labtrack_pro/screens/admin/admin_attendance_screen.dart';
 import 'package:labtrack_pro/screens/admin/manage_schedule_screen.dart';
 import 'package:labtrack_pro/screens/admin/manage_announcements_screen.dart';
 import 'package:labtrack_pro/widgets/admin_bottom_nav_bar.dart';
@@ -19,7 +19,7 @@ class _AdminMainShellState extends State<AdminMainShell> {
 
   final List<Widget> _screens = [
     const AdminDashboardScreen(),
-    const ManageAssistantsScreen(),
+    const AdminAttendanceScreen(),
     const ManageScheduleScreen(),
     const ManageAnnouncementsScreen(),
   ];

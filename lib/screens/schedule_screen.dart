@@ -255,7 +255,7 @@ class _ScheduleScreenState extends State<ScheduleScreen> {
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         Text(
-          'Jadwal Saya',
+          'My Schedule',
           style: Theme.of(context).textTheme.headlineSmall,
         ),
         const SizedBox(height: 12),

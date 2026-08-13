@@ -225,11 +225,11 @@ class _HomeScreenState extends State<HomeScreen> {
           iconColor: AppTheme.primary,
         ),
         StatCard(
-          label: 'Permit',
-          value: _dashboardData?['total_izin']?.toString() ?? '0',
+          label: 'Absent',
+          value: _dashboardData?['total_alpha']?.toString() ?? '0',
           subtitle: 'Days',
-          icon: Icons.assignment_outlined,
-          iconColor: AppTheme.tertiary,
+          icon: Icons.person_off_outlined,
+          iconColor: AppTheme.error,
         ),
         StatCard(
           label: 'Hours',
@@ -239,11 +239,11 @@ class _HomeScreenState extends State<HomeScreen> {
           iconColor: AppTheme.secondary,
         ),
         StatCard(
-          label: 'Absent',
-          value: _dashboardData?['total_alpha']?.toString() ?? '0',
-          subtitle: 'Days',
-          icon: Icons.person_off_outlined,
-          iconColor: AppTheme.error,
+          label: 'Rank',
+          value: _dashboardData?['rank']?.toString() ?? '0',
+          subtitle: 'Monthly',
+          icon: Icons.emoji_events_outlined,
+          iconColor: AppTheme.tertiary,
         ),
       ],
     );
