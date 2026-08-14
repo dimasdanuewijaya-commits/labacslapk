@@ -21,6 +21,8 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> {
   Timer? _statusTimer;
   Map<String, dynamic>? _systemStatus;
   bool _isLoadingStatus = true;
+  Map<String, dynamic>? _adminStats;
+  bool _isLoadingStats = true;
 
   String get _baseUrl {
     if (kIsWeb) return 'http://127.0.0.1:8000';
@@ -32,9 +34,11 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> {
   void initState() {
     super.initState();
     _fetchSystemStatus();
+    _fetchAdminStats();
     // Refresh status setiap 15 detik
     _statusTimer = Timer.periodic(const Duration(seconds: 15), (_) {
       _fetchSystemStatus();
+      _fetchAdminStats();
     });
   }
 
@@ -69,6 +73,27 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> {
             'camera_ok': false,
           };
           _isLoadingStatus = false;
+        });
+      }
+    }
+  }
+
+  Future<void> _fetchAdminStats() async {
+    try {
+      final response = await http.get(
+        Uri.parse('$_baseUrl/admin/dashboard/stats'),
+      ).timeout(const Duration(seconds: 5));
+
+      if (response.statusCode == 200 && mounted) {
+        setState(() {
+          _adminStats = jsonDecode(response.body);
+          _isLoadingStats = false;
+        });
+      }
+    } catch (e) {
+      if (mounted) {
+        setState(() {
+          _isLoadingStats = false;
         });
       }
     }
@@ -155,6 +180,13 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> {
   }
 
   Widget _buildQuickStats(BuildContext context) {
+    if (_isLoadingStats) {
+      return const Center(child: CircularProgressIndicator());
+    }
+    
+    final totalAsisten = _adminStats?['total_asisten']?.toString() ?? '0';
+    final avgHadir = _adminStats?['avg_hadir']?.toString() ?? '0%';
+
     return Row(
       children: [
         Expanded(
@@ -166,7 +198,7 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> {
             },
             child: _buildStatCard(
               'Total Asisten',
-              '18',
+              totalAsisten,
               Icons.people_alt_rounded,
               AppTheme.primary,
             ),
@@ -176,7 +208,7 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> {
         Expanded(
           child: _buildStatCard(
             'Avg Hadir',
-            '89%',
+            avgHadir,
             Icons.bar_chart_rounded,
             Colors.tealAccent,
           ),
@@ -215,6 +247,14 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> {
   }
 
   Widget _buildTodayAttendance() {
+    if (_isLoadingStats) {
+      return const Center(child: CircularProgressIndicator());
+    }
+    
+    final hadir = _adminStats?['hadir_hari_ini']?.toString() ?? '0';
+    final terlambat = _adminStats?['terlambat_hari_ini']?.toString() ?? '0';
+    final absen = _adminStats?['absen_hari_ini']?.toString() ?? '0';
+
     return GlassCard(
       padding: const EdgeInsets.all(20),
       child: Column(
@@ -238,9 +278,9 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> {
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceAround,
             children: [
-              _buildAttendanceItem('12', 'Hadir', AppTheme.emerald),
-              _buildAttendanceItem('2', 'Terlambat', AppTheme.amber),
-              _buildAttendanceItem('4', 'Absen', AppTheme.error),
+              _buildAttendanceItem(hadir, 'Hadir', AppTheme.emerald),
+              _buildAttendanceItem(terlambat, 'Terlambat', AppTheme.amber),
+              _buildAttendanceItem(absen, 'Absen', AppTheme.error),
             ],
           ),
         ],

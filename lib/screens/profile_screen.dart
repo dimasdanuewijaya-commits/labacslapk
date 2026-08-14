@@ -1,3 +1,5 @@
+import 'dart:io';
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:labtrack_pro/theme/app_theme.dart';
@@ -8,18 +10,67 @@ import 'package:shared_preferences/shared_preferences.dart';
 import 'package:labtrack_pro/screens/placeholder_screen.dart';
 import 'package:labtrack_pro/screens/change_password_screen.dart';
 
-class ProfileScreen extends StatelessWidget {
+class ProfileScreen extends StatefulWidget {
   const ProfileScreen({super.key});
 
   @override
+  State<ProfileScreen> createState() => _ProfileScreenState();
+}
+
+class _ProfileScreenState extends State<ProfileScreen> {
+  bool _isLoading = true;
+  String _displayName = 'Assistant';
+  String _userEmail = 'N/A';
+  String _userRfid = 'N/A';
+  String? _photoUrl;
+
+  @override
+  void initState() {
+    super.initState();
+    _fetchProfile();
+  }
+
+  Future<void> _fetchProfile() async {
+    final prefs = await SharedPreferences.getInstance();
+    final userId = prefs.getInt('user_id');
+    
+    if (userId != null) {
+      try {
+        final userData = await AuthService().getUserProfile(userId);
+        if (mounted) {
+          setState(() {
+            _displayName = userData['name'] ?? 'Assistant';
+            _userEmail = userData['email'] ?? 'N/A';
+            _userRfid = userData['rfid_uid'] ?? 'N/A';
+            _photoUrl = userData['photo_url'];
+            _isLoading = false;
+          });
+        }
+      } catch (e) {
+        if (mounted) {
+          setState(() {
+            // Fallback to shared preferences if fetch fails
+            _displayName = prefs.getString('user_name') ?? 'Assistant';
+            _userEmail = prefs.getString('user_email') ?? 'N/A';
+            _userRfid = prefs.getString('user_rfid') ?? 'N/A';
+            _isLoading = false;
+          });
+        }
+      }
+    } else {
+      if (mounted) {
+        setState(() => _isLoading = false);
+      }
+    }
+  }
+
+  @override
   Widget build(BuildContext context) {
-    return FutureBuilder<SharedPreferences>(
-      future: SharedPreferences.getInstance(),
-      builder: (context, snapshot) {
-        final prefs = snapshot.data;
-        final displayName = prefs?.getString('user_name') ?? 'Assistant';
-        final userEmail = prefs?.getString('user_email') ?? 'N/A';
-        final userRfid = prefs?.getString('user_rfid') ?? 'N/A';
+    if (_isLoading) {
+      return const Scaffold(
+        body: Center(child: CircularProgressIndicator()),
+      );
+    }
 
         return Scaffold(
           backgroundColor: AppTheme.background,
@@ -57,7 +108,7 @@ class ProfileScreen extends StatelessWidget {
             ),
             child: Column(
               children: [
-                _buildProfileHeader(context, displayName, userEmail, userRfid),
+                _buildProfileHeader(context, _displayName, _userEmail, _userRfid, _photoUrl),
                 const SizedBox(height: AppTheme.sectionGap),
                 _buildMenuList(context),
                 const SizedBox(height: 16),
@@ -67,15 +118,13 @@ class ProfileScreen extends StatelessWidget {
             ),
           ),
         );
-      },
-    );
   }
 
-  Widget _buildProfileHeader(BuildContext context, String displayName, String userEmail, String userRfid) {
+  Widget _buildProfileHeader(BuildContext context, String displayName, String userEmail, String userRfid, String? photoUrl) {
     return Column(
       children: [
         // Static Avatar with gradient ring
-        _StaticAvatar(),
+        _StaticAvatar(photoUrl: photoUrl),
         const SizedBox(height: 16),
         Text(
           displayName,
@@ -223,6 +272,10 @@ class ProfileScreen extends StatelessWidget {
 }
 
 class _StaticAvatar extends StatelessWidget {
+  final String? photoUrl;
+  
+  const _StaticAvatar({this.photoUrl});
+
   @override
   Widget build(BuildContext context) {
     return Stack(
@@ -246,9 +299,20 @@ class _StaticAvatar extends StatelessWidget {
               shape: BoxShape.circle,
               border: Border.all(color: AppTheme.surface, width: 4),
             ),
-            child: const CircleAvatar(
+            child: CircleAvatar(
               backgroundColor: AppTheme.surfaceContainerHigh,
-              child: Icon(Icons.person, size: 36, color: AppTheme.primary),
+              backgroundImage: photoUrl != null
+                  ? NetworkImage(
+                      kIsWeb 
+                        ? 'http://127.0.0.1:8000$photoUrl'
+                        : (Platform.isAndroid 
+                            ? 'http://10.0.2.2:8000$photoUrl' 
+                            : 'http://127.0.0.1:8000$photoUrl')
+                    )
+                  : null,
+              child: photoUrl == null 
+                  ? const Icon(Icons.person, size: 36, color: AppTheme.primary)
+                  : null,
             ),
           ),
         ),

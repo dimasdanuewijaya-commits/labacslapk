@@ -5,6 +5,8 @@ import 'package:http/http.dart' as http;
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
+import 'package:intl/intl.dart';
+import 'package:url_launcher/url_launcher.dart';
 import 'package:labtrack_pro/theme/app_theme.dart';
 import 'package:labtrack_pro/widgets/glass_card.dart';
 import 'package:labtrack_pro/widgets/shift_timeline.dart';
@@ -44,6 +46,7 @@ class _AttendanceScreenState extends State<AttendanceScreen> {
 
   bool _isLoading = true;
   String? _errorMessage;
+  bool _isAdmin = false;
 
   String get _baseUrl {
     if (kIsWeb) return 'http://127.0.0.1:8000';
@@ -62,6 +65,13 @@ class _AttendanceScreenState extends State<AttendanceScreen> {
       final prefs = await SharedPreferences.getInstance();
       final token = prefs.getString('access_token');
       final userId = prefs.getInt('user_id') ?? 2;
+      final role = prefs.getString('user_role');
+
+      if (mounted) {
+        setState(() {
+          _isAdmin = role == 'admin';
+        });
+      }
 
       if (token == null) {
         setState(() {
@@ -114,9 +124,16 @@ class _AttendanceScreenState extends State<AttendanceScreen> {
             }
           }
           
+          DateTime parsedDate = DateTime.now();
+          try {
+            parsedDate = DateFormat("EEEE, dd MMM yyyy", "en_US").parse(dateStr);
+          } catch (e) {
+            parsedDate = DateTime.now().subtract(Duration(days: fetchedRecords.length));
+          }
+          
           fetchedRecords.add(_AttendanceDayData(
             date: dateStr,
-            dateTime: DateTime.now(), // Fallback (proper parsing can be complex)
+            dateTime: parsedDate,
             checkIn: att['check_in'] ?? '--:--',
             checkOut: att['check_out'] ?? '--:--',
             monthYear: monthYear,
@@ -401,6 +418,23 @@ class _AttendanceScreenState extends State<AttendanceScreen> {
               ),
             ),
           ),
+          if (_isAdmin)
+            Padding(
+              padding: const EdgeInsets.only(right: 16),
+              child: IconButton(
+                onPressed: () async {
+                  final url = Uri.parse('$_baseUrl/admin/export/attendance');
+                  if (await canLaunchUrl(url)) {
+                    await launchUrl(url, mode: LaunchMode.externalApplication);
+                  }
+                },
+                icon: const Icon(Icons.download, color: AppTheme.primary),
+                tooltip: 'Export CSV',
+                style: IconButton.styleFrom(
+                  backgroundColor: AppTheme.primary.withValues(alpha: 0.1),
+                ),
+              ),
+            ),
         ],
       ),
       body: RefreshIndicator(
@@ -449,33 +483,6 @@ class _AttendanceScreenState extends State<AttendanceScreen> {
                           ),
                         ),
                       ),
-
-                    const SizedBox(height: AppTheme.sectionGap),
-                    // Download Report Button
-                    SizedBox(
-                      width: double.infinity,
-                      height: AppTheme.touchTarget,
-                      child: ElevatedButton.icon(
-                        onPressed: () {},
-                        icon: const Icon(Icons.description, size: 24),
-                        label: Text(
-                          'Download Report',
-                          style: GoogleFonts.hankenGrotesk(
-                            fontSize: 20,
-                            fontWeight: FontWeight.w600,
-                          ),
-                        ),
-                        style: ElevatedButton.styleFrom(
-                          backgroundColor: AppTheme.primary,
-                          foregroundColor: AppTheme.onPrimary,
-                          shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(12),
-                          ),
-                          elevation: 8,
-                          shadowColor: AppTheme.primary.withValues(alpha: 0.2),
-                        ),
-                      ),
-                    ),
                     const SizedBox(height: 100),
                   ],
                 ),

@@ -5,6 +5,8 @@ import 'package:http/http.dart' as http;
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
+import 'package:intl/intl.dart';
+import 'package:url_launcher/url_launcher.dart';
 import 'package:labtrack_pro/theme/app_theme.dart';
 import 'package:labtrack_pro/widgets/glass_card.dart';
 import 'package:labtrack_pro/widgets/shift_timeline.dart';
@@ -476,6 +478,22 @@ class _AdminAttendanceScreenState extends State<AdminAttendanceScreen> {
                 backgroundColor: AppTheme.primary.withValues(alpha: 0.08),
                 padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 0),
                 minimumSize: const Size(0, 32),
+              ),
+            ),
+          ),
+          Padding(
+            padding: const EdgeInsets.only(right: 16),
+            child: IconButton(
+              onPressed: () async {
+                final url = Uri.parse('$_baseUrl/admin/export/attendance');
+                if (await canLaunchUrl(url)) {
+                  await launchUrl(url, mode: LaunchMode.externalApplication);
+                }
+              },
+              icon: const Icon(Icons.download, color: AppTheme.primary),
+              tooltip: 'Export CSV',
+              style: IconButton.styleFrom(
+                backgroundColor: AppTheme.primary.withValues(alpha: 0.1),
               ),
             ),
           ),

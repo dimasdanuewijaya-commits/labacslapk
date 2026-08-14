@@ -147,6 +147,72 @@ class AuthService {
     }
   }
 
+  // Upload Profile Photo
+  Future<void> uploadProfilePhoto(int userId, File imageFile) async {
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      final token = prefs.getString('access_token');
+      
+      var request = http.MultipartRequest('POST', Uri.parse('$_baseUrl/users/$userId/photo'));
+      request.headers['Authorization'] = 'Bearer $token';
+      
+      request.files.add(
+        await http.MultipartFile.fromPath(
+          'file',
+          imageFile.path,
+        )
+      );
+
+      final streamedResponse = await request.send();
+      final response = await http.Response.fromStream(streamedResponse);
+
+      if (response.statusCode != 200) {
+        String errorMsg = 'Gagal mengunggah foto.';
+        try {
+          final data = jsonDecode(response.body);
+          if (data['detail'] != null) {
+            errorMsg = data['detail'];
+          }
+        } catch (_) {}
+        throw errorMsg;
+      }
+    } catch (e) {
+      if (e is SocketException) {
+        throw 'Tidak dapat terhubung ke server lokal.';
+      }
+      rethrow;
+    }
+  }
+
+  // Get User Profile
+  Future<Map<String, dynamic>> getUserProfile(int userId) async {
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      final token = prefs.getString('access_token');
+      // FastAPI doesn't have a specific /users/{id} endpoint yet? 
+      // Actually we have /users which returns all users. We can fetch all and filter, or just make a /users/{id} endpoint.
+      // Wait, we need to check if /users/{id} exists.
+      final response = await http.get(
+        Uri.parse('$_baseUrl/users'),
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': 'Bearer $token',
+        },
+      );
+
+      if (response.statusCode == 200) {
+        final List<dynamic> users = jsonDecode(response.body);
+        final user = users.firstWhere((u) => u['id'] == userId, orElse: () => null);
+        if (user != null) return user;
+        throw 'User tidak ditemukan.';
+      } else {
+        throw 'Gagal mengambil data user.';
+      }
+    } catch (e) {
+      throw 'Terjadi kesalahan: $e';
+    }
+  }
+
   // Update User RFID
   Future<void> updateUserRfid(int userId, String rfidUid) async {
     try {

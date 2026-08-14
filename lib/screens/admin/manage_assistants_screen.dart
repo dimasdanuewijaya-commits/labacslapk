@@ -1,5 +1,8 @@
+import 'dart:io';
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
+import 'package:image_picker/image_picker.dart';
 import 'package:labtrack_pro/theme/app_theme.dart';
 import 'package:labtrack_pro/widgets/glass_card.dart';
 import 'package:labtrack_pro/services/auth_service.dart';
@@ -53,6 +56,34 @@ class _ManageAssistantsScreenState extends State<ManageAssistantsScreen> {
         _fetchAssistants(); 
       }
     });
+  }
+
+  Future<void> _pickAndUploadPhoto(int userId) async {
+    try {
+      final picker = ImagePicker();
+      final pickedFile = await picker.pickImage(source: ImageSource.gallery);
+      
+      if (pickedFile != null) {
+        setState(() {
+          _isLoading = true;
+        });
+        
+        await _authService.uploadProfilePhoto(userId, File(pickedFile.path));
+        
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Foto berhasil diunggah')),
+        );
+        
+        _fetchAssistants();
+      }
+    } catch (e) {
+      setState(() {
+        _isLoading = false;
+      });
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Gagal: $e')),
+      );
+    }
   }
 
   void _showUpdateRfidDialog(int userId, String userName, String currentRfid) {
@@ -173,14 +204,45 @@ class _ManageAssistantsScreenState extends State<ManageAssistantsScreen> {
                                       padding: const EdgeInsets.all(16),
                                       child: Row(
                                       children: [
-                                        CircleAvatar(
-                                          backgroundColor: AppTheme.primary.withOpacity(0.1),
-                                          child: Text(
-                                            assistant['name'][0].toUpperCase(),
-                                            style: TextStyle(
-                                              color: AppTheme.primary,
-                                              fontWeight: FontWeight.bold,
-                                            ),
+                                        GestureDetector(
+                                          onTap: () => _pickAndUploadPhoto(assistant['id']),
+                                          child: Stack(
+                                            children: [
+                                              CircleAvatar(
+                                                radius: 24,
+                                                backgroundColor: AppTheme.primary.withOpacity(0.1),
+                                                backgroundImage: assistant['photo_url'] != null
+                                                    ? NetworkImage(
+                                                        kIsWeb 
+                                                          ? 'http://127.0.0.1:8000${assistant['photo_url']}'
+                                                          : (Platform.isAndroid 
+                                                              ? 'http://10.0.2.2:8000${assistant['photo_url']}' 
+                                                              : 'http://127.0.0.1:8000${assistant['photo_url']}')
+                                                      )
+                                                    : null,
+                                                child: assistant['photo_url'] == null 
+                                                    ? Text(
+                                                        assistant['name'][0].toUpperCase(),
+                                                        style: TextStyle(
+                                                          color: AppTheme.primary,
+                                                          fontWeight: FontWeight.bold,
+                                                        ),
+                                                      )
+                                                    : null,
+                                              ),
+                                              Positioned(
+                                                bottom: 0,
+                                                right: 0,
+                                                child: Container(
+                                                  padding: const EdgeInsets.all(4),
+                                                  decoration: BoxDecoration(
+                                                    color: AppTheme.primary,
+                                                    shape: BoxShape.circle,
+                                                  ),
+                                                  child: const Icon(Icons.camera_alt, size: 12, color: Colors.white),
+                                                ),
+                                              ),
+                                            ],
                                           ),
                                         ),
                                         const SizedBox(width: 16),
