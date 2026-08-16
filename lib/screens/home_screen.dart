@@ -26,9 +26,9 @@ class _HomeScreenState extends State<HomeScreen> {
   String _userName = '';
 
   String get _baseUrl {
-    if (kIsWeb) return 'http://127.0.0.1:8000';
-    if (Platform.isAndroid) return 'http://10.0.2.2:8000';
-    return 'http://127.0.0.1:8000';
+    if (kIsWeb) return 'https://api.himatekkomug.my.id';
+    if (Platform.isAndroid) return 'https://api.himatekkomug.my.id';
+    return 'https://api.himatekkomug.my.id';
   }
 
   @override
@@ -182,27 +182,6 @@ class _HomeScreenState extends State<HomeScreen> {
               ),
             ],
           ),
-        ),
-        Row(
-          children: [
-            // Avatar
-            Container(
-              width: 40,
-              height: 40,
-              padding: const EdgeInsets.all(2),
-              decoration: BoxDecoration(
-                shape: BoxShape.circle,
-                border: Border.all(
-                  color: AppTheme.primaryContainer,
-                  width: 2,
-                ),
-              ),
-              child: const CircleAvatar(
-                backgroundColor: AppTheme.surfaceContainerHigh,
-                child: Icon(Icons.person, size: 20, color: AppTheme.primary),
-              ),
-            ),
-          ],
         ),
       ],
     );
@@ -405,7 +384,7 @@ class _HomeScreenState extends State<HomeScreen> {
                     ClipRRect(
                       borderRadius: BorderRadius.circular(12),
                       child: Image.network(
-                        'http://127.0.0.1:8000$imageUrl',
+                        'https://api.himatekkomug.my.id$imageUrl',
                         width: double.infinity,
                         height: 150,
                         fit: BoxFit.cover,

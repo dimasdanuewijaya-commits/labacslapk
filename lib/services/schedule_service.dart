@@ -5,9 +5,9 @@ import 'package:http/http.dart' as http;
 
 class ScheduleService {
   String get _baseUrl {
-    if (kIsWeb) return 'http://127.0.0.1:8000';
-    if (Platform.isAndroid) return 'http://10.0.2.2:8000';
-    return 'http://127.0.0.1:8000';
+    if (kIsWeb) return 'https://api.himatekkomug.my.id';
+    if (Platform.isAndroid) return 'https://api.himatekkomug.my.id';
+    return 'https://api.himatekkomug.my.id';
   }
 
   // Get schedules for a specific user

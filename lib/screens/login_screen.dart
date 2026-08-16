@@ -4,6 +4,7 @@ import 'package:google_fonts/google_fonts.dart';
 import 'package:labtrack_pro/theme/app_theme.dart';
 import 'package:labtrack_pro/widgets/glass_card.dart';
 import 'package:labtrack_pro/services/auth_service.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
 class LoginScreen extends StatefulWidget {
   const LoginScreen({super.key});
@@ -34,6 +35,20 @@ class _LoginScreenState extends State<LoginScreen>
     _pulseAnimation = Tween<double>(begin: 1.0, end: 1.1).animate(
       CurvedAnimation(parent: _pulseController, curve: Curves.easeInOut),
     );
+    _loadSavedCredentials();
+  }
+
+  Future<void> _loadSavedCredentials() async {
+    final prefs = await SharedPreferences.getInstance();
+    final savedEmail = prefs.getString('remembered_email');
+    final savedPassword = prefs.getString('remembered_password');
+    if (savedEmail != null && savedPassword != null) {
+      setState(() {
+        _emailController.text = savedEmail;
+        _passwordController.text = savedPassword;
+        _rememberMe = true;
+      });
+    }
   }
 
   @override
@@ -69,6 +84,16 @@ class _LoginScreenState extends State<LoginScreen>
 
     try {
       await _authService.signInWithEmailPassword(email, password);
+      
+      final prefs = await SharedPreferences.getInstance();
+      if (_rememberMe) {
+        await prefs.setString('remembered_email', email);
+        await prefs.setString('remembered_password', password);
+      } else {
+        await prefs.remove('remembered_email');
+        await prefs.remove('remembered_password');
+      }
+
       if (mounted) {
         if (email.toLowerCase() == 'admin@lab.com' || email.toLowerCase() == 'admin@lab.acsl.com') {
           Navigator.of(context).pushReplacementNamed('/admin_main');
@@ -113,8 +138,6 @@ class _LoginScreenState extends State<LoginScreen>
                       _buildBranding(),
                       const SizedBox(height: 16),
                       _buildLoginCard(),
-                      const SizedBox(height: 16),
-                      _buildStatusIndicator(),
                     ],
                   ),
                 ),
@@ -456,22 +479,6 @@ class _LoginScreenState extends State<LoginScreen>
                 ],
               ),
       ),
-    );
-  }
-
-  Widget _buildStatusIndicator() {
-    return Row(
-      mainAxisAlignment: MainAxisAlignment.center,
-      children: [
-        Container(
-          width: 8,
-          height: 8,
-          decoration: const BoxDecoration(
-            color: AppTheme.emerald,
-            shape: BoxShape.circle,
-          ),
-        ),
-      ],
     );
   }
 }

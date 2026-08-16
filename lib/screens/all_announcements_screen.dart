@@ -36,7 +36,7 @@ class _AllAnnouncementsScreenState extends State<AllAnnouncementsScreen> {
         throw Exception('Not authenticated');
       }
 
-      final url = Uri.parse('http://127.0.0.1:8000/announcements/');
+      final url = Uri.parse('https://api.himatekkomug.my.id/announcements/');
       final response = await http.get(
         url,
         headers: {
@@ -158,7 +158,7 @@ class _AllAnnouncementsScreenState extends State<AllAnnouncementsScreen> {
                                   ClipRRect(
                                     borderRadius: BorderRadius.circular(12),
                                     child: Image.network(
-                                      'http://127.0.0.1:8000$imageUrl',
+                                      'https://api.himatekkomug.my.id$imageUrl',
                                       width: double.infinity,
                                       height: 150,
                                       fit: BoxFit.cover,

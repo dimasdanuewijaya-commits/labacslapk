@@ -25,9 +25,9 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> {
   bool _isLoadingStats = true;
 
   String get _baseUrl {
-    if (kIsWeb) return 'http://127.0.0.1:8000';
-    if (Platform.isAndroid) return 'http://10.0.2.2:8000';
-    return 'http://127.0.0.1:8000';
+    if (kIsWeb) return 'https://api.himatekkomug.my.id';
+    if (Platform.isAndroid) return 'https://api.himatekkomug.my.id';
+    return 'https://api.himatekkomug.my.id';
   }
 
   @override
@@ -197,7 +197,7 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> {
               );
             },
             child: _buildStatCard(
-              'Total Asisten',
+              'Total Assistants',
               totalAsisten,
               Icons.people_alt_rounded,
               AppTheme.primary,
@@ -207,7 +207,7 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> {
         const SizedBox(width: 16),
         Expanded(
           child: _buildStatCard(
-            'Avg Hadir',
+            'Avg Attendance',
             avgHadir,
             Icons.bar_chart_rounded,
             Colors.tealAccent,
@@ -264,7 +264,7 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> {
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
               Text(
-                'Kehadiran Hari Ini',
+                "Today's Attendance",
                 style: GoogleFonts.outfit(
                   color: AppTheme.primary,
                   fontSize: 18,
@@ -278,9 +278,9 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> {
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceAround,
             children: [
-              _buildAttendanceItem(hadir, 'Hadir', AppTheme.emerald),
-              _buildAttendanceItem(terlambat, 'Terlambat', AppTheme.amber),
-              _buildAttendanceItem(absen, 'Absen', AppTheme.error),
+              _buildAttendanceItem(hadir, 'Present', AppTheme.emerald),
+              _buildAttendanceItem(terlambat, 'Late', AppTheme.amber),
+              _buildAttendanceItem(absen, 'Absent', AppTheme.error),
             ],
           ),
         ],

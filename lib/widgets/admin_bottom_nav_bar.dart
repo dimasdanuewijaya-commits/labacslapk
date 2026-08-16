@@ -66,7 +66,7 @@ class AdminBottomNavBar extends StatelessWidget {
                     child: _NavItem(
                       icon: Icons.calendar_month_outlined,
                       activeIcon: Icons.calendar_month_rounded,
-                      label: 'Jadwal',
+                      label: 'Schedule',
                       isActive: currentIndex == 2,
                       onTap: () => onTap(2),
                     ),
@@ -75,7 +75,7 @@ class AdminBottomNavBar extends StatelessWidget {
                     child: _NavItem(
                       icon: Icons.campaign_outlined,
                       activeIcon: Icons.campaign_rounded,
-                      label: 'Pengumuman',
+                      label: 'Announcements',
                       isActive: currentIndex == 3,
                       onTap: () => onTap(3),
                     ),

@@ -1,5 +1,7 @@
 import 'dart:io';
+import 'dart:convert';
 import 'package:flutter/foundation.dart';
+import 'package:http/http.dart' as http;
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:image_picker/image_picker.dart';
@@ -86,8 +88,16 @@ class _ManageAssistantsScreenState extends State<ManageAssistantsScreen> {
     }
   }
 
-  void _showUpdateRfidDialog(int userId, String userName, String currentRfid) {
-    final rfidController = TextEditingController(text: currentRfid == 'Belum terdaftar' ? '' : currentRfid);
+  String get _baseUrl {
+    if (kIsWeb) return 'https://api.himatekkomug.my.id';
+    if (Platform.isAndroid) return 'https://api.himatekkomug.my.id';
+    return 'https://api.himatekkomug.my.id';
+  }
+
+  void _showEditAssistantDialog(int userId, String currentName, String currentEmail, String currentRfid) {
+    final nameController = TextEditingController(text: currentName);
+    final emailController = TextEditingController(text: currentEmail);
+    final rfidController = TextEditingController(text: currentRfid == 'Not registered' ? '' : currentRfid);
     
     showDialog(
       context: context,
@@ -96,13 +106,40 @@ class _ManageAssistantsScreenState extends State<ManageAssistantsScreen> {
         return StatefulBuilder(
           builder: (context, setState) {
             return AlertDialog(
-              title: Text('Update RFID untuk $userName'),
-              content: TextField(
-                controller: rfidController,
-                decoration: const InputDecoration(
-                  labelText: 'Nomor RFID',
-                  hintText: 'Tempelkan kartu lalu ketik/paste ke sini',
-                  border: OutlineInputBorder(),
+              title: Text('Edit Assistant'),
+              content: SingleChildScrollView(
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    TextField(
+                      controller: nameController,
+                      decoration: const InputDecoration(
+                        labelText: 'Nama',
+                        prefixIcon: Icon(Icons.person_outline),
+                        border: OutlineInputBorder(),
+                      ),
+                    ),
+                    const SizedBox(height: 12),
+                    TextField(
+                      controller: emailController,
+                      decoration: const InputDecoration(
+                        labelText: 'Email',
+                        prefixIcon: Icon(Icons.email_outlined),
+                        border: OutlineInputBorder(),
+                      ),
+                      keyboardType: TextInputType.emailAddress,
+                    ),
+                    const SizedBox(height: 12),
+                    TextField(
+                      controller: rfidController,
+                      decoration: const InputDecoration(
+                        labelText: 'Nomor RFID',
+                        prefixIcon: Icon(Icons.nfc_outlined),
+                        hintText: 'Kosongkan jika belum ada',
+                        border: OutlineInputBorder(),
+                      ),
+                    ),
+                  ],
                 ),
               ),
               actions: [
@@ -112,18 +149,40 @@ class _ManageAssistantsScreenState extends State<ManageAssistantsScreen> {
                 ),
                 ElevatedButton(
                   onPressed: isSubmitting ? null : () async {
+                    final newName = nameController.text.trim();
+                    final newEmail = emailController.text.trim();
                     final newRfid = rfidController.text.trim();
-                    if (newRfid.isEmpty) return;
+                    
+                    if (newName.isEmpty || newEmail.isEmpty) {
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        const SnackBar(content: Text('Nama dan Email tidak boleh kosong')),
+                      );
+                      return;
+                    }
                     
                     setState(() => isSubmitting = true);
                     try {
-                      await _authService.updateUserRfid(userId, newRfid);
-                      if (context.mounted) {
-                        Navigator.pop(context);
-                        ScaffoldMessenger.of(context).showSnackBar(
-                          const SnackBar(content: Text('RFID berhasil diupdate!')),
-                        );
-                        _fetchAssistants(); // Refresh data
+                      final response = await http.put(
+                        Uri.parse('$_baseUrl/users/$userId'),
+                        headers: {'Content-Type': 'application/json'},
+                        body: jsonEncode({
+                          'name': newName,
+                          'email': newEmail,
+                          'rfid_uid': newRfid.isEmpty ? '' : newRfid,
+                        }),
+                      );
+                      
+                      if (response.statusCode == 200) {
+                        if (context.mounted) {
+                          Navigator.pop(context);
+                          ScaffoldMessenger.of(context).showSnackBar(
+                            const SnackBar(content: Text('Assistant data successfully updated!')),
+                          );
+                          _fetchAssistants();
+                        }
+                      } else {
+                        final body = jsonDecode(response.body);
+                        throw Exception(body['detail'] ?? 'Gagal mengupdate data');
                       }
                     } catch (e) {
                       if (context.mounted) {
@@ -137,13 +196,65 @@ class _ManageAssistantsScreenState extends State<ManageAssistantsScreen> {
                   },
                   child: isSubmitting 
                     ? const SizedBox(width: 16, height: 16, child: CircularProgressIndicator(strokeWidth: 2)) 
-                    : const Text('Simpan'),
+                    : const Text('Save'),
                 ),
               ],
             );
           }
         );
       }
+    );
+  }
+  Future<void> _deleteAssistant(int userId) async {
+    try {
+      final response = await http.delete(
+        Uri.parse('$_baseUrl/users/$userId'),
+      );
+
+      if (response.statusCode == 200) {
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(content: Text('Assistant successfully deleted')),
+          );
+          _fetchAssistants();
+        }
+      } else {
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(content: Text('Failed to delete assistant')),
+          );
+        }
+      }
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Error: $e')),
+        );
+      }
+    }
+  }
+
+  void _confirmDeleteAssistant(int userId, String name) {
+    showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text('Delete Assistant'),
+        content: Text('Are you sure you want to delete assistant $name? Their attendance and schedule data will also be deleted.'),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context),
+            child: const Text('Cancel'),
+          ),
+          ElevatedButton(
+            onPressed: () {
+              Navigator.pop(context);
+              _deleteAssistant(userId);
+            },
+            style: ElevatedButton.styleFrom(backgroundColor: Colors.red),
+            child: const Text('Delete', style: TextStyle(color: Colors.white)),
+          ),
+        ],
+      ),
     );
   }
 
@@ -166,7 +277,7 @@ class _ManageAssistantsScreenState extends State<ManageAssistantsScreen> {
                   ),
                   const SizedBox(width: 8),
                   Text(
-                    'Kelola Asisten',
+                    'Manage Assistants',
                     style: GoogleFonts.outfit(
                       color: AppTheme.primary,
                       fontSize: 24,
@@ -176,11 +287,13 @@ class _ManageAssistantsScreenState extends State<ManageAssistantsScreen> {
                   const Spacer(),
                   ElevatedButton.icon(
                     onPressed: _showAddAssistantDialog,
-                    icon: const Icon(Icons.add, color: Colors.white, size: 18),
-                    label: const Text('Tambah', style: TextStyle(color: Colors.white)),
+                    icon: const Icon(Icons.add, color: Colors.white, size: 16),
+                    label: const Text('Add', style: TextStyle(color: Colors.white, fontSize: 13)),
                     style: ElevatedButton.styleFrom(
                       backgroundColor: AppTheme.primary,
-                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                      minimumSize: const Size(0, 36),
+                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
                     ),
                   ),
                 ],
@@ -192,7 +305,7 @@ class _ManageAssistantsScreenState extends State<ManageAssistantsScreen> {
                     : _error != null
                         ? Center(child: Text(_error!, style: const TextStyle(color: Colors.red)))
                         : _assistants.isEmpty
-                            ? const Center(child: Text('Belum ada data asisten.'))
+                            ? const Center(child: Text('No assistants found.'))
                             : ListView.builder(
                                 physics: const BouncingScrollPhysics(),
                                 itemCount: _assistants.length,
@@ -214,10 +327,10 @@ class _ManageAssistantsScreenState extends State<ManageAssistantsScreen> {
                                                 backgroundImage: assistant['photo_url'] != null
                                                     ? NetworkImage(
                                                         kIsWeb 
-                                                          ? 'http://127.0.0.1:8000${assistant['photo_url']}'
+                                                          ? 'https://api.himatekkomug.my.id${assistant['photo_url']}'
                                                           : (Platform.isAndroid 
-                                                              ? 'http://10.0.2.2:8000${assistant['photo_url']}' 
-                                                              : 'http://127.0.0.1:8000${assistant['photo_url']}')
+                                                              ? 'https://api.himatekkomug.my.id${assistant['photo_url']}' 
+                                                              : 'https://api.himatekkomug.my.id${assistant['photo_url']}')
                                                       )
                                                     : null,
                                                 child: assistant['photo_url'] == null 
@@ -265,7 +378,7 @@ class _ManageAssistantsScreenState extends State<ManageAssistantsScreen> {
                                                 ),
                                               ),
                                               Text(
-                                                'RFID: ${assistant['rfid_uid'] ?? 'Belum terdaftar'}',
+                                                'RFID: ${assistant['rfid_uid'] ?? 'Not registered'}',
                                                 style: TextStyle(
                                                   color: AppTheme.onSurfaceVariant,
                                                   fontSize: 12,
@@ -276,12 +389,18 @@ class _ManageAssistantsScreenState extends State<ManageAssistantsScreen> {
                                         ),
                                         IconButton(
                                           icon: const Icon(Icons.edit_outlined, color: Colors.blueGrey),
-                                          onPressed: () => _showUpdateRfidDialog(
+                                          onPressed: () => _showEditAssistantDialog(
                                             assistant['id'], 
-                                            assistant['name'], 
-                                            assistant['rfid_uid'] ?? 'Belum terdaftar'
+                                            assistant['name'],
+                                            assistant['email'],
+                                            assistant['rfid_uid'] ?? 'Not registered'
                                           ),
-                                          tooltip: 'Update RFID',
+                                          tooltip: 'Edit Assistant',
+                                        ),
+                                        IconButton(
+                                          icon: const Icon(Icons.delete_outline, color: Colors.redAccent),
+                                          onPressed: () => _confirmDeleteAssistant(assistant['id'], assistant['name']),
+                                          tooltip: 'Delete Assistant',
                                         ),
                                       ],
                                       ),
@@ -328,7 +447,7 @@ class _AddAssistantBottomSheetState extends State<AddAssistantBottomSheet> {
       if (mounted) {
         Navigator.pop(context, true); 
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Asisten berhasil ditambahkan!')),
+          const SnackBar(content: Text('Assistant successfully added!')),
         );
       }
     } catch (e) {
@@ -364,7 +483,7 @@ class _AddAssistantBottomSheetState extends State<AddAssistantBottomSheet> {
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             Text(
-              'Tambah Asisten Baru',
+              'Add New Assistant',
               style: GoogleFonts.outfit(
                 fontSize: 20,
                 fontWeight: FontWeight.bold,
@@ -374,31 +493,31 @@ class _AddAssistantBottomSheetState extends State<AddAssistantBottomSheet> {
             const SizedBox(height: 20),
             TextFormField(
               controller: _nameController,
-              decoration: const InputDecoration(labelText: 'Nama Lengkap', border: OutlineInputBorder()),
-              validator: (v) => v!.isEmpty ? 'Nama wajib diisi' : null,
+              decoration: const InputDecoration(labelText: 'Full Name', border: OutlineInputBorder()),
+              validator: (v) => v!.isEmpty ? 'Name is required' : null,
             ),
             const SizedBox(height: 16),
             TextFormField(
               controller: _emailController,
               decoration: const InputDecoration(labelText: 'Email', border: OutlineInputBorder()),
-              validator: (v) => v!.isEmpty ? 'Email wajib diisi' : null,
+              validator: (v) => v!.isEmpty ? 'Email is required' : null,
             ),
             const SizedBox(height: 16),
             TextFormField(
               controller: _passwordController,
               decoration: const InputDecoration(labelText: 'Password', border: OutlineInputBorder()),
               obscureText: true,
-              validator: (v) => v!.length < 6 ? 'Password minimal 6 karakter' : null,
+              validator: (v) => v!.length < 6 ? 'Password must be at least 6 characters' : null,
             ),
             const SizedBox(height: 16),
             TextFormField(
               controller: _rfidController,
               decoration: const InputDecoration(
-                labelText: 'Nomor RFID', 
+                labelText: 'RFID Number', 
                 border: OutlineInputBorder(),
-                helperText: 'Bisa didapatkan dengan menempelkan kartu ke Kiosk',
+                helperText: 'Can be obtained by tapping card on Kiosk',
               ),
-              validator: (v) => v!.isEmpty ? 'RFID wajib diisi' : null,
+              validator: (v) => v!.isEmpty ? 'RFID is required' : null,
             ),
             const SizedBox(height: 24),
             SizedBox(
@@ -413,7 +532,7 @@ class _AddAssistantBottomSheetState extends State<AddAssistantBottomSheet> {
                 ),
                 child: _isLoading
                     ? const CircularProgressIndicator(color: Colors.white)
-                    : const Text('Simpan', style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
+                    : const Text('Save', style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
               ),
             ),
           ],

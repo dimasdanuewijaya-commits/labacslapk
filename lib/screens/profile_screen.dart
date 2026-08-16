@@ -304,10 +304,10 @@ class _StaticAvatar extends StatelessWidget {
               backgroundImage: photoUrl != null
                   ? NetworkImage(
                       kIsWeb 
-                        ? 'http://127.0.0.1:8000$photoUrl'
+                        ? 'https://api.himatekkomug.my.id$photoUrl'
                         : (Platform.isAndroid 
-                            ? 'http://10.0.2.2:8000$photoUrl' 
-                            : 'http://127.0.0.1:8000$photoUrl')
+                            ? 'https://api.himatekkomug.my.id$photoUrl' 
+                            : 'https://api.himatekkomug.my.id$photoUrl')
                     )
                   : null,
               child: photoUrl == null 

@@ -44,7 +44,7 @@ class _ManageAnnouncementsScreenState extends State<ManageAnnouncementsScreen> {
       final token = prefs.getString('access_token');
       if (token == null) throw Exception('No token found');
 
-      final url = Uri.parse('http://127.0.0.1:8000/announcements/');
+      final url = Uri.parse('https://api.himatekkomug.my.id/announcements/');
       var request = http.MultipartRequest('POST', url);
       request.headers['Authorization'] = 'Bearer $token';
       request.fields['title'] = _titleController.text;
@@ -63,7 +63,7 @@ class _ManageAnnouncementsScreenState extends State<ManageAnnouncementsScreen> {
       if (response.statusCode == 200) {
         if (mounted) {
           ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(content: Text('Pengumuman berhasil disebarkan!')),
+            const SnackBar(content: Text('Announcement successfully published!')),
           );
           _titleController.clear();
           _contentController.clear();
@@ -106,7 +106,7 @@ class _ManageAnnouncementsScreenState extends State<ManageAnnouncementsScreen> {
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               Text(
-                'Kelola Pengumuman',
+                'Manage Announcements',
                 style: GoogleFonts.outfit(
                   color: AppTheme.primary,
                   fontSize: 28,
@@ -115,7 +115,7 @@ class _ManageAnnouncementsScreenState extends State<ManageAnnouncementsScreen> {
               ),
               const SizedBox(height: 4),
               Text(
-                'Buat pengumuman baru untuk asisten',
+                'Create new announcement for assistants',
                 style: TextStyle(
                   color: AppTheme.onSurfaceVariant,
                   fontSize: 14,
@@ -130,11 +130,11 @@ class _ManageAnnouncementsScreenState extends State<ManageAnnouncementsScreen> {
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      _buildLabel('Judul Pengumuman'),
+                      _buildLabel('Announcement Title'),
                       TextFormField(
                         controller: _titleController,
-                        decoration: _inputDecoration('Misal: Protokol Keamanan Lab v2.4'),
-                        validator: (value) => value == null || value.isEmpty ? 'Wajib diisi' : null,
+                        decoration: _inputDecoration('e.g., Lab Security Protocol v2.4'),
+                        validator: (value) => value == null || value.isEmpty ? 'Required' : null,
                       ),
                       const SizedBox(height: 16),
                       
@@ -166,16 +166,16 @@ class _ManageAnnouncementsScreenState extends State<ManageAnnouncementsScreen> {
                       ),
                       const SizedBox(height: 16),
                       
-                      _buildLabel('Isi Pengumuman'),
+                      _buildLabel('Announcement Content'),
                       TextFormField(
                         controller: _contentController,
                         maxLines: 5,
-                        decoration: _inputDecoration('Tulis detail pengumuman di sini...'),
-                        validator: (value) => value == null || value.isEmpty ? 'Wajib diisi' : null,
+                        decoration: _inputDecoration('Write announcement details here...'),
+                        validator: (value) => value == null || value.isEmpty ? 'Required' : null,
                       ),
                       const SizedBox(height: 16),
                       
-                      _buildLabel('Gambar (Opsional)'),
+                      _buildLabel('Image (Optional)'),
                       InkWell(
                         onTap: _pickImage,
                         child: Container(
@@ -192,7 +192,7 @@ class _ManageAnnouncementsScreenState extends State<ManageAnnouncementsScreen> {
                                 children: [
                                   Icon(Icons.add_photo_alternate_outlined, size: 40, color: AppTheme.primary),
                                   SizedBox(height: 8),
-                                  Text('Pilih Gambar dari Galeri', style: TextStyle(color: AppTheme.primary)),
+                                  Text('Select Image from Gallery', style: TextStyle(color: AppTheme.primary)),
                                 ],
                               )
                             : ClipRRect(
@@ -220,7 +220,7 @@ class _ManageAnnouncementsScreenState extends State<ManageAnnouncementsScreen> {
                                   width: 20, 
                                   child: CircularProgressIndicator(color: Colors.white, strokeWidth: 2)
                                 )
-                              : const Text('Sebarkan Pengumuman', style: TextStyle(color: Colors.white, fontSize: 16, fontWeight: FontWeight.bold)),
+                              : const Text('Publish Announcement', style: TextStyle(color: Colors.white, fontSize: 16, fontWeight: FontWeight.bold)),
                         ),
                       ),
                     ],

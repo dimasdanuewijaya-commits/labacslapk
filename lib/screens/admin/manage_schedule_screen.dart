@@ -71,7 +71,7 @@ class _ManageScheduleScreenState extends State<ManageScheduleScreen> {
       }
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Jadwal berhasil dihapus')),
+          const SnackBar(content: Text('Schedule successfully deleted')),
         );
       }
     } catch (e) {
@@ -86,7 +86,7 @@ class _ManageScheduleScreenState extends State<ManageScheduleScreen> {
   void _showAddScheduleDialog() {
     if (_selectedAssistant == null) {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Pilih asisten terlebih dahulu!')),
+        const SnackBar(content: Text('Please select an assistant first!')),
       );
       return;
     }
@@ -115,7 +115,7 @@ class _ManageScheduleScreenState extends State<ManageScheduleScreen> {
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               Text(
-                'Kelola Jadwal',
+                'Manage Schedule',
                 style: GoogleFonts.outfit(
                   color: AppTheme.primary,
                   fontSize: 28,
@@ -139,7 +139,7 @@ class _ManageScheduleScreenState extends State<ManageScheduleScreen> {
                   child: DropdownButtonHideUnderline(
                     child: DropdownButton<dynamic>(
                       isExpanded: true,
-                      hint: const Text('Pilih Asisten...'),
+                      hint: const Text('Select Assistant...'),
                       value: _selectedAssistant,
                       items: _assistants.map((ast) {
                         return DropdownMenuItem<dynamic>(
@@ -166,7 +166,7 @@ class _ManageScheduleScreenState extends State<ManageScheduleScreen> {
                   child: ElevatedButton.icon(
                     onPressed: _showAddScheduleDialog,
                     icon: const Icon(Icons.add, color: Colors.white),
-                    label: const Text('Tambah Jadwal Baru', style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
+                    label: const Text('Add New Schedule', style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
                     style: ElevatedButton.styleFrom(
                       backgroundColor: AppTheme.primary,
                       padding: const EdgeInsets.symmetric(vertical: 14),
@@ -180,13 +180,13 @@ class _ManageScheduleScreenState extends State<ManageScheduleScreen> {
               
               Expanded(
                 child: _selectedAssistant == null
-                    ? const Center(child: Text('Silakan pilih asisten di atas untuk melihat jadwalnya.'))
+                    ? const Center(child: Text('Please select an assistant above to view their schedule.'))
                     : _isLoadingSchedules
                         ? const Center(child: CircularProgressIndicator())
                         : _error != null
                             ? Center(child: Text(_error!, style: const TextStyle(color: Colors.red)))
                             : _schedules.isEmpty
-                                ? Center(child: Text('${_selectedAssistant['name']} belum memiliki jadwal.'))
+                                ? Center(child: Text('${_selectedAssistant['name']} does not have any schedule yet.'))
                                 : ListView.builder(
                                     physics: const BouncingScrollPhysics(),
                                     itemCount: _schedules.length,
@@ -293,7 +293,7 @@ class _AddScheduleBottomSheetState extends State<AddScheduleBottomSheet> {
   bool _isLoading = false;
 
   String _selectedDay = 'Senin';
-  final List<String> _days = ['Senin', 'Selasa', 'Rabu', 'Kamis', 'Jumat'];
+  final List<String> _days = ['Senin', 'Selasa', 'Rabu', 'Kamis', 'Jumat', 'Sabtu'];
 
   int _selectedShift = 1;
   final List<int> _shifts = [1, 2, 3, 4, 5];
@@ -344,7 +344,7 @@ class _AddScheduleBottomSheetState extends State<AddScheduleBottomSheet> {
       if (mounted) {
         Navigator.pop(context, true); 
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Jadwal berhasil ditambahkan!')),
+          const SnackBar(content: Text('Schedule successfully added!')),
         );
       }
     } catch (e) {
@@ -378,7 +378,7 @@ class _AddScheduleBottomSheetState extends State<AddScheduleBottomSheet> {
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Text(
-            'Tambah Jadwal Shift',
+            'Add Shift Schedule',
             style: GoogleFonts.outfit(
               fontSize: 20,
               fontWeight: FontWeight.bold,
@@ -388,7 +388,7 @@ class _AddScheduleBottomSheetState extends State<AddScheduleBottomSheet> {
           const SizedBox(height: 20),
           
           DropdownButtonFormField<String>(
-            decoration: const InputDecoration(labelText: 'Hari', border: OutlineInputBorder()),
+            decoration: const InputDecoration(labelText: 'Day', border: OutlineInputBorder()),
             value: _selectedDay,
             items: _days.map((d) => DropdownMenuItem(value: d, child: Text(d))).toList(),
             onChanged: (v) => setState(() => _selectedDay = v!),
@@ -396,7 +396,7 @@ class _AddScheduleBottomSheetState extends State<AddScheduleBottomSheet> {
           const SizedBox(height: 16),
           
           DropdownButtonFormField<int>(
-            decoration: const InputDecoration(labelText: 'Shift Ke-', border: OutlineInputBorder()),
+            decoration: const InputDecoration(labelText: 'Shift Number', border: OutlineInputBorder()),
             value: _selectedShift,
             items: _shifts.map((s) => DropdownMenuItem(value: s, child: Text('Shift $s'))).toList(),
             onChanged: (v) => setState(() => _selectedShift = v!),
@@ -404,7 +404,7 @@ class _AddScheduleBottomSheetState extends State<AddScheduleBottomSheet> {
           const SizedBox(height: 16),
           
           DropdownButtonFormField<String>(
-            decoration: const InputDecoration(labelText: 'Aktivitas', border: OutlineInputBorder()),
+            decoration: const InputDecoration(labelText: 'Activity', border: OutlineInputBorder()),
             value: _selectedActivity,
             items: _activities.map((a) => DropdownMenuItem(value: a, child: Text(a))).toList(),
             onChanged: (v) => setState(() => _selectedActivity = v!),
@@ -412,7 +412,7 @@ class _AddScheduleBottomSheetState extends State<AddScheduleBottomSheet> {
           
           if (_selectedActivity == 'Teaching') ...[
             const SizedBox(height: 16),
-            const Text("Detail Kelas Praktikum", style: TextStyle(fontWeight: FontWeight.bold)),
+            const Text("Practicum Class Details", style: TextStyle(fontWeight: FontWeight.bold)),
             const SizedBox(height: 8),
             Row(
               children: [
@@ -420,7 +420,7 @@ class _AddScheduleBottomSheetState extends State<AddScheduleBottomSheet> {
                   flex: 2,
                   child: DropdownButtonFormField<String>(
                     isExpanded: true,
-                    decoration: const InputDecoration(labelText: 'Jurusan', border: OutlineInputBorder()),
+                    decoration: const InputDecoration(labelText: 'Major', border: OutlineInputBorder()),
                     value: _selectedJurusan,
                     items: _jurusanOptions.entries
                         .map((e) => DropdownMenuItem(value: e.key, child: Text(e.value, overflow: TextOverflow.ellipsis)))
@@ -444,7 +444,7 @@ class _AddScheduleBottomSheetState extends State<AddScheduleBottomSheet> {
                 Expanded(
                   flex: 1,
                   child: DropdownButtonFormField<String>(
-                    decoration: const InputDecoration(labelText: 'Kelas', border: OutlineInputBorder()),
+                    decoration: const InputDecoration(labelText: 'Class', border: OutlineInputBorder()),
                     value: _selectedKelas,
                     items: _kelasOptions.map((k) => DropdownMenuItem(value: k, child: Text(k))).toList(),
                     onChanged: (v) => setState(() => _selectedKelas = v!),
@@ -454,7 +454,7 @@ class _AddScheduleBottomSheetState extends State<AddScheduleBottomSheet> {
                 Expanded(
                   flex: 1,
                   child: DropdownButtonFormField<String>(
-                    decoration: const InputDecoration(labelText: 'Shift', border: OutlineInputBorder()),
+                    decoration: const InputDecoration(labelText: 'Group', border: OutlineInputBorder()),
                     value: _selectedKelompok,
                     items: _kelompokOptions.map((k) => DropdownMenuItem(value: k, child: Text(k))).toList(),
                     onChanged: (v) => setState(() => _selectedKelompok = v!),
@@ -464,7 +464,7 @@ class _AddScheduleBottomSheetState extends State<AddScheduleBottomSheet> {
             ),
             const SizedBox(height: 16),
             DropdownButtonFormField<String>(
-              decoration: const InputDecoration(labelText: 'Mata Praktikum', border: OutlineInputBorder()),
+              decoration: const InputDecoration(labelText: 'Course', border: OutlineInputBorder()),
               value: _selectedMatkum,
               items: _matkumOptions.map((m) => DropdownMenuItem(value: m, child: Text(m))).toList(),
               onChanged: (v) => setState(() => _selectedMatkum = v!),
@@ -484,7 +484,7 @@ class _AddScheduleBottomSheetState extends State<AddScheduleBottomSheet> {
               ),
               child: _isLoading
                   ? const CircularProgressIndicator(color: Colors.white)
-                  : const Text('Simpan Jadwal', style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
+                  : const Text('Save Schedule', style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
             ),
           ),
         ],
